@@ -1,0 +1,133 @@
+AR-ENGINE/
+│
+├── CORE
+│   ├── Engine Core
+│   ├── Configuration
+│   ├── Lifecycle
+│   ├── Module Manager
+│   └── Error System
+│
+├── DEVICE
+│   ├── Camera
+│   ├── Sensors
+│   ├── Device Capability
+│   └── Permission
+│
+├── DETECTION
+│   ├── QR
+│   ├── Image
+│   ├── Marker
+│   ├── Plane
+│   └── Object
+│
+├── SPATIAL
+│   ├── Localization
+│   ├── World Tracking
+│   ├── Anchors
+│   ├── Coordinates
+│   └── Spatial Identity
+│
+├── SCENE
+│   ├── Scene Manager
+│   ├── Scene Graph
+│   ├── Object Hierarchy
+│   └── Scene State
+│
+├── OBJECTS
+│   ├── Spatial Object
+│   ├── Plane
+│   ├── Image
+│   ├── Video
+│   ├── Text
+│   ├── 3D Object
+│   ├── Button
+│   ├── Form
+│   └── Mini App
+│
+├── CONTENT
+│   ├── Asset Manager
+│   ├── Image
+│   ├── Video
+│   ├── Text
+│   └── 3D Assets
+│
+├── RENDERING
+│   ├── Renderer
+│   ├── Materials
+│   ├── Lighting
+│   ├── Depth
+│   ├── Occlusion
+│   └── Performance
+│
+├── INTERACTION
+│   ├── Input
+│   ├── Gesture
+│   ├── Hit Testing
+│   ├── Action
+│   └── Event System
+│
+├── MINI-APPS
+│   ├── Runtime
+│   ├── Registry
+│   ├── Lifecycle
+│   ├── State
+│   ├── Permissions
+│   └── API
+│
+├── SERVICES
+│   ├── Navigation
+│   ├── Information
+│   ├── Booking
+│   ├── Ordering
+│   ├── Communication
+│   └── Live Data
+│
+├── AI
+│   ├── Context
+│   ├── Spatial Context
+│   ├── Object Context
+│   └── AI Provider
+│
+├── NETWORK
+│   ├── API
+│   ├── Repository Interfaces
+│   ├── Synchronization
+│   └── Offline Handling
+│
+├── CACHE
+│   ├── Memory Cache
+│   ├── Disk Cache
+│   ├── Asset Cache
+│   └── Cache Policy
+│
+├── STATE
+│   ├── Engine State
+│   ├── Tracking State
+│   ├── Scene State
+│   ├── Object State
+│   └── App State
+│
+├── SECURITY
+│   ├── Permissions
+│   ├── Authentication
+│   ├── Authorization
+│   └── Mini App Isolation
+│
+├── ANALYTICS
+│   ├── Events
+│   ├── Usage
+│   └── Errors
+│
+├── PERFORMANCE
+│   ├── FPS
+│   ├── Memory
+│   ├── CPU
+│   ├── GPU
+│   └── Resource Optimization
+│
+└── DEBUG
+    ├── Tracking Debugger
+    ├── Anchor Debugger
+    ├── Scene Debugger
+    ├── Object Debugger
+    └── Performance Monitor

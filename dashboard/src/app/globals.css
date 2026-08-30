@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0f172a; /* slate-900 */
+  --foreground: #f8fafc; /* slate-50 */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Base Heading Overrides to ensure Nunito weight matches */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600; /* SemiBold as requested */
+}
+
+/* Base button weight */
+button {
+  font-weight: 600; 
+}
+
+label {
+  font-weight: 500;
+}

@@ -1,0 +1,12 @@
+# Environment files containing local secrets and connection URLs
+.env
+.env.local
+*.env
+
+# Dependency directory and compiled artifacts
+node_modules/
+dist/
+
+# Local running storage directory for Prototype 1
+storage/
+*.log

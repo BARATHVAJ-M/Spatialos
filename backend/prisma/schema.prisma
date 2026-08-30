@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id                   String                @id @default(uuid()) @db.Uuid
+  name                 String                @db.VarChar(255)
+  slug                 String                @unique @db.VarChar(100)
+  createdAt            DateTime              @default(now())
+  componentDefinitions ComponentDefinition[]
+  content              ContentAsset[]
+  experiences          Experience[]
+  places               Place[]
+  serviceDefinitions   ServiceDefinition[]
+  serviceInstances     ServiceInstance[]
+  users                User[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  name           String       @default("Admin User") @db.VarChar(255)
+  email          String       @unique
+  passwordHash   String       @default("") // Added for auth
+  loginAttempts  Int          @default(0)  // Added for auth lockout
+  lockedUntil    DateTime?                 // Added for auth lockout
+  role           String       @default("VIEWER")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+model Place {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  parentId       String?      @db.Uuid
+  name           String       @db.VarChar(255)
+  qrTargetId     String       @unique @db.VarChar(255)
+  latitude       Float?
+  longitude      Float?
+  experiences    Experience[]
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  parent         Place?       @relation("PlaceHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children       Place[]      @relation("PlaceHierarchy")
+
+  @@index([organizationId])
+  @@index([qrTargetId])
+  @@map("places")
+}
+
+model Experience {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @db.Uuid
+  placeId        String        @db.Uuid
+  name           String        @db.VarChar(255)
+  version        Int           @default(1)
+  status         PublishStatus @default(DRAFT)
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  place          Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  spatialNodes   SpatialNode[]
+  serviceInstances ServiceInstance[]
+
+  @@unique([placeId, status, version])
+  @@map("experiences")
+}
+
+model ServiceInstance {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @db.Uuid
+  experienceId        String             @db.Uuid
+  spatialNodeId       String?            @db.Uuid
+  serviceDefinitionId String             @db.Uuid
+  name                String             @db.VarChar(255)
+  status              PublishStatus      @default(DRAFT)
+  configuration       Json?
+  content             Json?
+  organization        Organization       @relation(fields: [organizationId], references: [id])
+  experience          Experience         @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  serviceDefinition   ServiceDefinition  @relation(fields: [serviceDefinitionId], references: [id])
+
+  @@index([experienceId])
+  @@map("service_instances")
+}
+
+model SpatialNode {
+  id           String     @id @default(uuid()) @db.Uuid
+  experienceId String     @db.Uuid
+  nodeType     NodeType
+  positionX    Float      @default(0)
+  positionY    Float      @default(0)
+  positionZ    Float      @default(0)
+  rotationX    Float      @default(0)
+  rotationY    Float      @default(0)
+  rotationZ    Float      @default(0)
+  scaleX       Float      @default(1)
+  scaleY       Float      @default(1)
+  scaleZ       Float      @default(1)
+  referenceId  String     @db.Uuid
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  @@index([experienceId])
+  @@map("spatial_nodes")
+}
+
+model ComponentDefinition {
+  id             String              @id @default(uuid()) @db.Uuid
+  organizationId String              @db.Uuid
+  name           String              @db.VarChar(255)
+  schema         Json
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  components     ComponentTemplate[]
+
+  @@map("component_definitions")
+}
+
+model ServiceDefinition {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @db.Uuid
+  name                String             @db.VarChar(255)
+  version             String             @default("1.0.0")
+  category            String             @default("General")
+  description         String?
+  configurationSchema Json?
+  contentSchema       Json?
+  payloadSchema       Json?
+  actions             ActionDefinition[]
+  organization        Organization       @relation(fields: [organizationId], references: [id])
+  serviceInstances    ServiceInstance[]
+
+  @@map("service_definitions")
+}
+
+model ContentAsset {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  assetType      String
+  url            String
+  metadata       Json?
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("content_assets")
+}
+
+model ComponentTemplate {
+  id                    String              @id @default(uuid()) @db.Uuid
+  componentDefinitionId String              @db.Uuid
+  name                  String              @db.VarChar(255)
+  uiLayout              Json
+  definition            ComponentDefinition @relation(fields: [componentDefinitionId], references: [id])
+
+  @@map("component_templates")
+}
+
+model ActionDefinition {
+  id                  String            @id @default(uuid()) @db.Uuid
+  serviceDefinitionId String            @db.Uuid
+  name                String            @db.VarChar(255)
+  serviceType         String
+  targetUrl           String?
+  payloadMap          Json?
+  service             ServiceDefinition @relation(fields: [serviceDefinitionId], references: [id])
+
+  @@map("action_definitions")
+}
+
+model analytics_events {
+  id             String   @id @db.Uuid
+  organizationId String   @db.Uuid
+  placeId        String   @db.Uuid
+  userId         String?  @db.Uuid
+  eventType      String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([placeId, eventType])
+}
+
+model AuthAuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @db.Uuid
+  email     String?  @db.VarChar(255)
+  ipAddress String?  @db.VarChar(45)
+  status    String   @db.VarChar(50) // SUCCESS, FAILED, LOCKED
+  timestamp DateTime @default(now())
+
+  @@map("auth_audit_logs")
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum NodeType {
+  MEDIA
+  UI_PANEL
+  TRIGGER
+}
