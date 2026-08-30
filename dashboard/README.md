@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SpatialOS Control Plane (Dashboard)
 
-## Getting Started
+The **Dashboard** acts as the primary command center and operational control plane for SpatialOS. It provides a visual interface for administrators to map physical reality, deploy spatial experiences, and manage users.
 
-First, run the development server:
+## 🚀 Technology Stack
+- **Framework:** Next.js 16 (App Router)
+- **UI & Styling:** React, Tailwind CSS V4, Deep Space OLED Theme
+- **State Management & Routing:** Next.js Server Components, React Hooks
 
+## 🏗️ Core Responsibilities
+
+1. **Reality Mapping & Places**
+   Administrators can define "Places" (e.g., specific floors, rooms, or outdoor coordinates). Each Place serves as a bounded reality matrix where augmented experiences can be anchored.
+2. **Experience Deployment**
+   Through the Control Plane, operators construct AR "Experiences"—scene graphs containing 3D models, video layers, and interactive UI widgets—and push them to active Places.
+3. **Queue & Publishing**
+   A global Release Queue system allows admins to stage, review, and safely roll out new logic and assets to the physical world in real time.
+4. **Identity & Authorization**
+   Complete integration with the Backend via JWT-based authentication. Role-based access ensures only authorized architects can modify reality.
+
+## 💻 Development
 ```bash
+# Install dependencies
+npm install
+
+# Run the local development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The dashboard runs securely against the SpatialOS backend API.
