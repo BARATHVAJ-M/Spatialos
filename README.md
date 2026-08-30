@@ -4,7 +4,7 @@
   <h1>SpatialOS</h1>
   <p><em>Changing real world into interface.</em></p>
   
-  <h3><b>"Pure vision from the mind."</b></h3>
+  <h3><b>"Pure Vision from the Pure Mind."</b></h3>
   
   <p>
     <img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version 1.0.0" />
