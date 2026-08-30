@@ -102,9 +102,6 @@ flutter run
 
 ---
 
-## 🔐 Security & Publishing
-*This repository serves as a portfolio piece and demonstration of Team Unknown's engineering capabilities. All sensitive `.env` keys, heavy compiled binaries (`.apk`), and internal developer tools have been stripped via `.gitignore` for public release.*
-
 ---
 <div align="center">
   <p>Built with precision by <b>Team Unknown</b></p>
