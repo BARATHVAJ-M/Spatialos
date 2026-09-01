@@ -19,6 +19,7 @@ model Organization {
   serviceDefinitions   ServiceDefinition[]
   serviceInstances     ServiceInstance[]
   users                User[]
+  staffMembers         StaffDirectory[]
 
   @@map("organizations")
 }
@@ -204,4 +205,29 @@ enum NodeType {
   MEDIA
   UI_PANEL
   TRIGGER
+}
+
+model StaffDirectory {
+  id              String       @id @default(uuid()) @db.Uuid
+  organizationId  String       @db.Uuid
+  staffId         String       @unique @db.VarChar(100) // The college's internal ID
+  name            String       @db.VarChar(255)
+  photoUrl        String?      
+  designation     String?      @db.VarChar(255)
+  department      String?      @db.VarChar(255)
+  phone           String?      @db.VarChar(50)
+  email           String?      @db.VarChar(255)
+  subjects        Json?        // Array of subjects
+  classesInCharge Json?        // Array of classes
+  room            String?      @db.VarChar(100)
+  timetable       Json?        // Structured timetable data
+  status          String       @default("ACTIVE") @db.VarChar(50)
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([department])
+  @@map("staff_directory")
 }
