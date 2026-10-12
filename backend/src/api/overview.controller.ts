@@ -172,8 +172,8 @@ export class OverviewController {
       place: d.place?.name || 'Unknown',
       version: `v${d.version}.0.0`,
       status: 'Ready',
-      updated: 'Recently',
-      by: 'System Admin'
+      updated: 'No data',
+      by: '-'
     }));
   }
 
@@ -196,8 +196,8 @@ export class OverviewController {
       place: h.place?.name || 'Unknown',
       version: `v${h.version}.0.0`,
       status: h.status, // 'PUBLISHED' or 'ARCHIVED'
-      updated: 'Recently',
-      by: 'System Admin'
+      updated: 'No data',
+      by: '-'
     }));
   }
 
@@ -216,5 +216,42 @@ export class OverviewController {
       source: 'AuthModule',
       entity: l.email || 'System'
     }));
+  }
+
+  @Get('monitoring/stats')
+  async getMonitoringStats(@Req() req) {
+    const orgId = req.user?.orgId || '00000000-0000-0000-0000-000000000000';
+    
+    // Total Logins (SUCCESS)
+    const loginsCount = await this.prisma.authAuditLog.count({
+      where: { status: 'SUCCESS' }
+    });
+
+    // Failed Attempts
+    const failedCount = await this.prisma.authAuditLog.count({
+      where: { status: { in: ['FAILED', 'LOCKED'] } }
+    });
+
+    // DB Ping
+    let dbPing = 0;
+    try {
+      const start = Date.now();
+      await this.prisma.$queryRaw`SELECT 1`;
+      dbPing = Date.now() - start;
+    } catch (e) {
+      dbPing = -1;
+    }
+
+    // Active Users
+    const usersCount = await this.prisma.user.count({
+      where: { organizationId: orgId, lockedUntil: null }
+    });
+
+    return [
+      { label: 'Total Logins', count: loginsCount.toString(), status: 'Info', color: 'text-emerald-500 bg-emerald-500/10' },
+      { label: 'Database Latency', count: dbPing >= 0 ? `${dbPing} ms` : 'Error', status: dbPing < 50 ? 'Healthy' : 'Warning', color: dbPing < 50 ? 'text-emerald-500 bg-emerald-500/10' : 'text-amber-500 bg-amber-50' },
+      { label: 'Active Users', count: usersCount.toString(), status: 'Info', color: 'text-indigo-500 bg-indigo-500/10' },
+      { label: 'Failed Logins', count: failedCount.toString(), status: failedCount > 10 ? 'Warning' : 'Healthy', color: failedCount > 10 ? 'text-amber-500 bg-amber-50' : 'text-emerald-500 bg-emerald-500/10' },
+    ];
   }
 }

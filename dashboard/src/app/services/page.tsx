@@ -14,6 +14,18 @@ export default function ServicesPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const handleSyncStaff = async () => {
+    setLoading(true);
+    try {
+      const data = await apiFetch<any>('/staff/sync', { method: 'POST' });
+      showToast(`Sync successful. Added: ${data.addedCount}, Updated: ${data.updatedCount}, Deactivated: ${data.inactiveCount || 0}`, 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Sync failed', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchServices = async () => {
     setLoading(true);
     try {
@@ -40,22 +52,31 @@ export default function ServicesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Service Templates</h1>
-          <p className="text-slate-400 mt-1 text-sm">Discover available capability templates to attach to Experiences.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Service Templates</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Discover available capability templates to attach to Experiences.</p>
         </div>
-        <button 
-          onClick={handleRefreshRegistry}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-700 shadow-sm transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 text-slate-400 ${loading ? 'animate-spin' : ''}`} /> Refresh Templates
-        </button>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={handleSyncStaff}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Sync IT Staff Data
+          </button>
+          <button 
+            onClick={handleRefreshRegistry}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-100 dark:bg-slate-700 shadow-sm transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 text-slate-500 dark:text-slate-400 ${loading ? 'animate-spin' : ''}`} /> Refresh Templates
+          </button>
+        </div>
       </div>
 
       <div className="space-y-6">
         <div className="relative max-w-md">
-          <input type="text" placeholder="Search service templates..." className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 shadow-sm rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/50" />
-          <Server className="w-4 h-4 text-slate-400 absolute left-4 top-3" />
+          <input type="text" placeholder="Search service templates..." className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/50" />
+          <Server className="w-4 h-4 text-slate-500 dark:text-slate-400 absolute left-4 top-3" />
         </div>
 
         {loading ? (
@@ -65,7 +86,7 @@ export default function ServicesPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {services.map((srv) => (
-              <div key={srv.id} className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm p-6 flex flex-col justify-between hover:border-indigo-300 transition-all">
+              <div key={srv.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 flex flex-col justify-between hover:border-indigo-300 transition-all">
                 <div>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -73,10 +94,10 @@ export default function ServicesPage() {
                         <Server className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-white text-lg">{srv.name}</h3>
+                        <h3 className="font-bold text-slate-900 dark:text-white text-lg">{srv.name}</h3>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-slate-400 font-mono bg-slate-700 px-1.5 py-0.5 rounded">ID: {srv.id.slice(0, 8)}...</span>
-                          <span className="text-[10px] text-slate-400 font-mono bg-slate-700 px-1.5 py-0.5 rounded">v{srv.version}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">ID: {srv.id.slice(0, 8)}...</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">v{srv.version}</span>
                         </div>
                       </div>
                     </div>
@@ -85,14 +106,14 @@ export default function ServicesPage() {
                     </span>
                   </div>
                   
-                  <p className="text-sm text-slate-400 mt-5 leading-relaxed">{srv.description || srv.desc || 'No description provided.'}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-5 leading-relaxed">{srv.description || srv.desc || 'No description provided.'}</p>
                   
                   <div className="mt-5 space-y-3">
                     <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Capabilities</p>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Capabilities</p>
                       <div className="flex flex-wrap gap-1.5">
                         {(srv.capabilities || [srv.category || 'General']).map((cap: string, i: number) => (
-                          <span key={i} className="px-2 py-1 bg-slate-900 border border-slate-700 text-slate-400 text-[10px] font-semibold rounded-md">
+                          <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-semibold rounded-md">
                             {cap}
                           </span>
                         ))}
@@ -103,7 +124,7 @@ export default function ServicesPage() {
               </div>
             ))}
             {services.length === 0 && (
-              <div className="col-span-2 text-center py-12 text-slate-400 bg-slate-900 rounded-xl border border-dashed border-slate-600">
+              <div className="col-span-2 text-center py-12 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
                 No service templates available. Make sure the database is seeded.
               </div>
             )}
@@ -114,7 +135,7 @@ export default function ServicesPage() {
       {/* Global Toasts */}
       {toast && (
         <div className={`fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-300 z-50 ${
-          toast.type === 'success' ? 'bg-slate-900 text-white' : 'bg-red-600 text-white'
+          toast.type === 'success' ? 'bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white' : 'bg-red-600 text-slate-900 dark:text-white'
         }`}>
           <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           <span className="text-sm font-bold">{toast.message}</span>

@@ -46,7 +46,7 @@ export class CompilerService {
       }
     };
 
-    if (dbNode.nodeType === 'MEDIA') {
+    if (dbNode.nodeType === 'MEDIA' && dbNode.referenceId) {
       const asset = await this.prisma.contentAsset.findUnique({ where: { id: dbNode.referenceId } });
       if (asset) {
         baseNode.mediaPayload = {
@@ -58,14 +58,6 @@ export class CompilerService {
       }
     }
 
-    if (dbNode.nodeType === 'UI_PANEL') {
-      const template = await this.prisma.componentTemplate.findUnique({ where: { id: dbNode.referenceId } });
-      if (template) {
-        baseNode.uiPayload = {
-          layout: template.uiLayout
-        };
-      }
-    }
 
     return baseNode;
   }

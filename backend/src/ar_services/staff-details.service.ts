@@ -1,8 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { StaffRepository } from '../database/repositories/staff.repository';
+import { ARServiceHandler } from './ar-service.interface';
+
 
 @Injectable()
-export class StaffDetailsService {
+export class StaffDetailsService implements ARServiceHandler {
   constructor(private readonly staffRepository: StaffRepository) {}
 
   /**
@@ -25,7 +27,7 @@ export class StaffDetailsService {
       return { status: 'success', data: staffDetails };
     }
 
-    return { status: 'success', message: 'Action not supported' };
+    throw new BadRequestException(`Action '${action}' not supported for Staff Details Service.`);
   }
 
   getSchema() {

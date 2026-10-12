@@ -1,7 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { ARServiceHandler } from './ar-service.interface';
+
 
 @Injectable()
-export class NoticeBoardService {
+export class NoticeBoardService implements ARServiceHandler {
   
   /**
    * Processes runtime interactions from the AR User App
@@ -21,7 +23,7 @@ export class NoticeBoardService {
       return { status: 'success', data: notice };
     }
 
-    return { status: 'success', message: 'Action not supported' };
+    throw new BadRequestException(`Action '${action}' not supported for Notice Board Service.`);
   }
 
   /**

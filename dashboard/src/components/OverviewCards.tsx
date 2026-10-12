@@ -20,7 +20,7 @@ import { apiFetch } from '../lib/api';
 
 const DEFAULT_SUMMARY_DATA = [
   { label: 'Active Places', value: '...', total: '...', icon: MapPin, href: '/places', color: 'bg-blue-500' },
-  { label: 'Published Exp.', value: '...', total: '...', icon: Box, href: '/experiences', color: 'bg-purple-500' },
+  { label: 'Experiences', value: '...', total: '...', icon: Box, href: '/experiences', color: 'bg-purple-500' },
   { label: 'Active Services', value: '...', total: '...', icon: Server, href: '/services', color: 'bg-emerald-500' },
   { label: 'Total Content', value: '...', icon: ImageIcon, href: '/content', color: 'bg-amber-500' },
   { label: 'Total Users', value: '...', icon: Users, href: '/users', color: 'bg-indigo-500' },
@@ -47,16 +47,16 @@ export function SummaryCards() {
       {summaryData.map((item) => {
         const Icon = item.icon;
         return (
-        <Link key={item.label} href={item.href} className="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all group">
+        <Link key={item.label} href={item.href} className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-slate-400">{item.label}</p>
-              <h3 className="text-2xl font-bold text-slate-200 mt-1">{item.value}</h3>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</p>
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mt-1">{item.value}</h3>
               {item.total && (
-                <p className="text-xs text-slate-400 mt-1">out of {item.total} total</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">out of {item.total} total</p>
               )}
             </div>
-            <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center text-white bg-opacity-10`}>
+            <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center text-slate-900 dark:text-white bg-opacity-10`}>
               <Icon className={`w-5 h-5 text-${item.color.split('-')[1]}-500`} />
             </div>
           </div>
@@ -71,11 +71,9 @@ export function SummaryCards() {
 }
 
 const DEFAULT_PUBLISH_STATUS = [
-  { label: 'Draft', count: 0, icon: FileText, color: 'text-slate-400' },
-  { label: 'Ready', count: 0, icon: AlertCircle, color: 'text-amber-500' },
+  { label: 'Draft', count: 0, icon: FileText, color: 'text-slate-500 dark:text-slate-400' },
   { label: 'Published', count: 0, icon: CheckCircle2, color: 'text-emerald-500' },
-  { label: 'Unpublished', count: 0, icon: UploadCloud, color: 'text-indigo-500' },
-  { label: 'Failed', count: 0, icon: XCircle, color: 'text-red-500' },
+  { label: 'Archived', count: 0, icon: AlertCircle, color: 'text-red-500' },
 ];
 
 export function PublishingSummary() {
@@ -95,21 +93,21 @@ export function PublishingSummary() {
   }, []);
 
   return (
-    <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm p-5">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-slate-200">Publishing Status</h3>
+        <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">Publishing Status</h3>
         <Link href="/publishing" className="text-sm font-medium text-indigo-400 hover:text-indigo-700">View All</Link>
       </div>
       <div className="space-y-3">
         {publishStatus.map((status) => {
           const StatusIcon = status.icon;
           return (
-          <Link key={status.label} href={`/publishing?status=${status.label.toLowerCase()}`} className="flex items-center justify-between p-2 hover:bg-slate-700 rounded-lg transition-colors">
+          <Link key={status.label} href={`/publishing?status=${status.label.toLowerCase()}`} className="flex items-center justify-between p-2 hover:bg-slate-100 dark:bg-slate-700 rounded-lg transition-colors">
             <div className="flex items-center gap-3">
               <StatusIcon className={`w-5 h-5 ${status.color}`} />
-              <span className="text-sm font-medium text-slate-300">{status.label}</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{status.label}</span>
             </div>
-            <span className="text-sm font-semibold text-white">{status.count}</span>
+            <span className="text-sm font-semibold text-slate-900 dark:text-white">{status.count}</span>
           </Link>
           );
         })}

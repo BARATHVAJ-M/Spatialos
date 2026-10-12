@@ -8,4 +8,7 @@ module.exports = {
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
+  transformIgnorePatterns: [
+    '/node_modules/(?!(@nestjs/cache-manager|@nestjs/schedule|cache-manager)/)'
+  ],
 };

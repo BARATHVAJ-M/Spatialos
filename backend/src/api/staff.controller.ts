@@ -1,36 +1,27 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Request } from '@nestjs/common';
-import { StaffService } from '../logic/staff.service';
+import { Controller, Post, Get, Req, UseGuards } from '@nestjs/common';
+import { StaffSyncService } from '../logic/staff-sync.service';
+import { JwtAuthGuard } from '../common/guards/auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('v1/admin/staff')
 export class StaffController {
-  constructor(private readonly staffService: StaffService) {}
+  constructor(
+    private readonly staffSyncService: StaffSyncService
+  ) {}
 
   @Get()
-  async getAllStaff(@Request() req: any) {
-    // Hardcoded organization for V1 unless JWT extracts it
-    const organizationId = req.user?.organizationId || '123e4567-e89b-12d3-a456-426614174000';
-    return this.staffService.getStaffDirectory(organizationId);
+  getStaffDirectory(@Req() req) {
+    const organizationId = req.user?.orgId || req.user?.organizationId || '123e4567-e89b-12d3-a456-426614174000';
+    return this.staffSyncService.getAllStaff(organizationId);
   }
 
-  @Get(':staffId')
-  async getStaffMember(@Param('staffId') staffId: string, @Request() req: any) {
-    const organizationId = req.user?.organizationId || '123e4567-e89b-12d3-a456-426614174000';
-    return this.staffService.getStaffMember(organizationId, staffId);
-  }
-
-  @Post()
-  async createStaffMember(@Body() data: any, @Request() req: any) {
-    const organizationId = req.user?.organizationId || '123e4567-e89b-12d3-a456-426614174000';
-    return this.staffService.createStaffMember(organizationId, data);
-  }
-
-  @Put(':id')
-  async updateStaffMember(@Param('id') id: string, @Body() data: any) {
-    return this.staffService.updateStaffMember(id, data);
-  }
-
-  @Delete(':id')
-  async deleteStaffMember(@Param('id') id: string) {
-    return this.staffService.removeStaffMember(id);
+  @Post('sync')
+  async syncFromSheet(@Req() req) {
+    const organizationId = req.user?.orgId || req.user?.organizationId || '123e4567-e89b-12d3-a456-426614174000';
+    // Use the IT Staff Details CSV Export link based on the provided sheet ID
+    const IT_STAFF_DETAILS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1O7K5XS_z3rxaKVP_REQQly2fwo8mB6wcGYy15Dp8_V0/export?format=csv';
+    
+    // Execute synchronously to avoid BullMQ Mock hang and return the exact counts to the dashboard
+    return this.staffSyncService.syncFromGoogleSheet(organizationId, IT_STAFF_DETAILS_CSV_URL);
   }
 }

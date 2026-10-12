@@ -1,37 +1,24 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { ARServiceHandler } from './ar-service.interface';
 
 @Injectable()
-export class ClassroomService {
+export class ClassroomService implements ARServiceHandler {
 
   async processEvent(payload: any, instanceData: any) {
     const { action } = payload;
-    const timetable = instanceData?.content?.timetable || [];
     const reminders = instanceData?.content?.reminders || [];
+    const config = instanceData?.configuration || {};
 
     if (action === 'get_current_status') {
       const now = new Date();
-      const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }); // e.g. "Monday"
-      const currentTime = now.getHours() * 60 + now.getMinutes(); // minutes since midnight for easy comparison
-
-      // Filter today's classes
-      const todaysClasses = timetable.filter((t: any) => t.day === currentDay);
       
-      let currentClass = null;
-      let nextClass = null;
-
-      // Simple calculation algorithm
-      for (const t of todaysClasses) {
-         // Assuming time is stored in "HH:MM" 24h format
-         const [hours, mins] = t.time.split(':').map(Number);
-         const classStartMins = hours * 60 + mins;
-         const classEndMins = classStartMins + 60; // Assuming 1 hr duration for V1
-
-         if (currentTime >= classStartMins && currentTime < classEndMins) {
-             currentClass = t;
-         } else if (currentTime < classStartMins && !nextClass) {
-             nextClass = t;
-         }
-      }
+      const currentClass = config.currentClass && config.currentClass.subject 
+        ? config.currentClass 
+        : null;
+        
+      const nextClass = config.nextClass && config.nextClass.subject 
+        ? config.nextClass 
+        : null;
 
       // Filter active reminders
       const activeReminders = reminders.filter((r: any) => {
@@ -51,10 +38,10 @@ export class ClassroomService {
     }
 
     if (action === 'view_timetable') {
-       return { status: 'success', data: timetable };
+       throw new BadRequestException(`Timetable viewing is no longer supported for Classroom Service.`);
     }
 
-    return { status: 'success', message: 'Action not supported' };
+    throw new BadRequestException(`Action '${action}' not supported for Classroom Service.`);
   }
 
   getSchema() {
@@ -62,13 +49,11 @@ export class ClassroomService {
       title: 'Classroom',
       configurationFields: [
         { name: 'className', type: 'string', required: true, description: 'e.g., III IT A' },
-        { name: 'displayOptions', type: 'json', default: { showReminders: true, showNextClass: true } }
+        { name: 'displayOptions', type: 'json', default: { showReminders: true, showNextClass: true } },
+        { name: 'currentClass', type: 'json', default: { subject: '', time: '', staff: '' } },
+        { name: 'nextClass', type: 'json', default: { subject: '', time: '', staff: '' } }
       ],
       contentSchema: {
-        timetable: { 
-          type: 'array', 
-          items: { day: 'string', time: 'string', subject: 'string', staff: 'string' } 
-        },
         reminders: {
           type: 'array',
           items: { id: 'uuid', title: 'string', description: 'text', active: 'boolean', expirationDate: 'date' }

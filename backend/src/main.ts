@@ -32,6 +32,18 @@ async function bootstrap() {
     ...(httpsOptions ? { httpsOptions } : {}),
   });
 
+  // Enable graceful shutdown hooks (important for BullMQ to finish active jobs)
+  app.enableShutdownHooks();
+
+  // Catch unhandled exceptions to prevent the server from crashing outright
+  process.on('uncaughtException', (err) => {
+    logger.error('Uncaught Exception:', err);
+  });
+  
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+
   // Rule 18 & 45: Enforce HTTP security headers and limit payload sizes to prevent memory DOS
   app.use(helmet({ crossOriginResourcePolicy: false, contentSecurityPolicy: false }));
   app.use(express.json({ limit: '50mb' }));
@@ -52,12 +64,23 @@ async function bootstrap() {
     logger.log(`📁 Local media storage directory created at: ${storageDir}`);
   }
 
-  // Enable CORS first so static asset requests receive Access-Control-Allow-Origin headers
+  // Enable CORS securely for production
+  const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000'];
   app.enableCors({
-    origin: true, // Reflects the origin dynamically, required when credentials: true
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests) if not strictly enforced
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
+
+  // Trust Reverse Proxy for SSL termination (e.g. AWS ALB, Nginx, Cloudflare)
+  app.set('trust proxy', 1);
 
   // Static assets exposing removed for security. Media is now served securely via /v1/admin/content/stream/:id
 

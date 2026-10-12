@@ -1,7 +1,10 @@
-import { Controller, Post, Body, Param, Put, Req, Get, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Param, Put, Req, Get, Delete, UseGuards, UseInterceptors } from '@nestjs/common';
+// Removed CacheInterceptor for admin CRUD reliability
 import { ExperiencesService } from '../logic/experiences.service';
-import { CreateExperienceDto, UpdateSpatialNodesDto } from '../experiences/dto/experience.dto';
+import { CreateExperienceDto, UpdateExperienceDto, UpdateSpatialNodesDto } from '../experiences/dto/experience.dto';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('v1/admin/experiences')
@@ -21,18 +24,28 @@ export class ExperiencesController {
   }
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'EDITOR')
   create(@Body() createExperienceDto: CreateExperienceDto, @Req() req) {
     const orgId = req.user?.orgId || '00000000-0000-0000-0000-000000000000';
     return this.experiencesService.create(orgId, createExperienceDto.placeId, createExperienceDto.name);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateDto: any, @Req() req) {
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'EDITOR')
+  update(@Param('id') id: string, @Body() updateDto: UpdateExperienceDto, @Req() req) {
     const orgId = req.user?.orgId || '00000000-0000-0000-0000-000000000000';
-    return this.experiencesService.update(orgId, id, updateDto);
+    // Ensure only name and description can be updated via this endpoint
+    return this.experiencesService.update(orgId, id, {
+      name: updateDto.name,
+      description: updateDto.description,
+    });
   }
 
   @Post(':id/publish')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'EDITOR')
   publish(@Param('id') id: string, @Req() req) {
     const orgId = req.user?.orgId || '00000000-0000-0000-0000-000000000000';
     return this.experiencesService.publish(orgId, id);
@@ -57,6 +70,8 @@ export class ExperiencesController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
   remove(@Param('id') id: string, @Req() req) {
     const orgId = req.user?.orgId || '00000000-0000-0000-0000-000000000000';
     return this.experiencesService.remove(orgId, id);

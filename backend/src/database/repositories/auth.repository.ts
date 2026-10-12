@@ -26,7 +26,7 @@ export class AuthRepository {
     });
   }
 
-  async createUser(email: string, role: string, passwordHash: string = '') {
+  async createUser(name: string, email: string, role: string, passwordHash: string = '', verificationToken?: string, verificationTokenExpiry?: Date) {
     let org = await this.prisma.organization.findFirst();
     if (!org) {
       org = await this.prisma.organization.create({
@@ -36,11 +36,47 @@ export class AuthRepository {
 
     return this.prisma.user.create({
       data: {
+        name,
         email,
         role,
         passwordHash,
-        organizationId: org.id
+        organizationId: org.id,
+        isVerified: false,
+        verificationToken,
+        verificationTokenExpiry,
       },
+    });
+  }
+
+  async findByVerificationToken(token: string) {
+    return this.prisma.user.findFirst({
+      where: { verificationToken: token },
+    });
+  }
+
+  async findByResetToken(token: string) {
+    return this.prisma.user.findFirst({
+      where: { resetToken: token },
+    });
+  }
+
+  async updateUser(userId: string, data: any) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+  }
+
+  async incrementOtpAttempts(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { otpAttempts: { increment: 1 } },
+    });
+  }
+
+  async deleteUser(userId: string) {
+    return this.prisma.user.delete({
+      where: { id: userId },
     });
   }
 }

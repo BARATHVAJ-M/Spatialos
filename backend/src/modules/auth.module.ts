@@ -3,13 +3,15 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from '../api/auth.controller';
 import { AuthService } from '../logic/auth.service';
 import { AuthRepository } from '../database/repositories/auth.repository';
+import { EmailModule } from './email.module';
 
 export const jwtConstants = {
-  secret: 'SUPER_SECRET_KEY_FOR_JWT_SPATIAL_OS',
+  secret: process.env.JWT_SECRET || 'SUPER_SECRET_KEY_FOR_JWT_SPATIAL_OS',
 };
 
 @Module({
   imports: [
+    EmailModule,
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,

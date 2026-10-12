@@ -11,6 +11,17 @@ export class CreateExperienceDto {
   name: string;
 }
 
+export class UpdateExperienceDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+
 class SpatialNodeDto {
   @IsString()
   @IsNotEmpty()

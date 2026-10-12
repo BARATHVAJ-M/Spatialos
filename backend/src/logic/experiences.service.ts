@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { ContentService } from './content.service';
 
 @Injectable()
 export class ExperiencesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private contentService: ContentService
+  ) {}
 
   async findAll(organizationId: string) {
     return this.prisma.experience.findMany({
@@ -53,11 +57,28 @@ export class ExperiencesService {
     });
     if (!experience) throw new NotFoundException('Experience not found');
 
-    // Archive existing published experience for this place
-    await this.prisma.experience.updateMany({
-      where: { placeId: experience.placeId, status: 'PUBLISHED' },
-      data: { status: 'ARCHIVED' }
+    if (experience.status === 'PUBLISHED') {
+      return experience;
+    }
+
+    // Find existing published experience for this place
+    const publishedExp = await this.prisma.experience.findFirst({
+      where: { placeId: experience.placeId, status: 'PUBLISHED' }
     });
+
+    if (publishedExp) {
+      // Find a safe version number for archiving to avoid unique constraint violations
+      const maxExp = await this.prisma.experience.findFirst({
+        where: { placeId: experience.placeId },
+        orderBy: { version: 'desc' }
+      });
+      const nextVersion = (maxExp?.version || 0) + 1;
+      
+      await this.prisma.experience.update({
+        where: { id: publishedExp.id },
+        data: { status: 'ARCHIVED', version: nextVersion }
+      });
+    }
 
     // Publish this one
     return this.prisma.experience.update({
@@ -72,11 +93,24 @@ export class ExperiencesService {
     });
     if (!experience) throw new NotFoundException('Experience not found');
 
-    // Archive the currently published experience for this place
-    await this.prisma.experience.updateMany({
-      where: { placeId: experience.placeId, status: 'PUBLISHED' },
-      data: { status: 'ARCHIVED' }
+    // Find the currently published experience for this place
+    const publishedExp = await this.prisma.experience.findFirst({
+      where: { placeId: experience.placeId, status: 'PUBLISHED' }
     });
+
+    if (publishedExp) {
+      // Find a safe version number for archiving to avoid unique constraint violations
+      const maxExp = await this.prisma.experience.findFirst({
+        where: { placeId: experience.placeId },
+        orderBy: { version: 'desc' }
+      });
+      const nextVersion = (maxExp?.version || 0) + 1;
+      
+      await this.prisma.experience.update({
+        where: { id: publishedExp.id },
+        data: { status: 'ARCHIVED', version: nextVersion }
+      });
+    }
 
     // Restore this archived one to published
     return this.prisma.experience.update({
@@ -138,11 +172,6 @@ export class ExperiencesService {
       // Find what instances we have
       const providedIds = instances.map(i => i.id).filter(id => id);
 
-      console.log('--- DEBUG DELETE ---');
-      console.log('Experience ID:', id);
-      console.log('Provided IDs:', providedIds);
-      console.log('Instances:', JSON.stringify(instances, null, 2));
-      console.log('--------------------');
 
       // Find instances to delete
       const instancesToDelete = await prisma.serviceInstance.findMany({
@@ -151,6 +180,37 @@ export class ExperiencesService {
           ...(providedIds.length > 0 ? { id: { notIn: providedIds } } : {})
         }
       });
+
+      // Extract media URLs from content to clean up orphans
+      const mediaUrlsToDelete = new Set<string>();
+      
+      const mediaRegex = /\/media\/[a-f0-9]{64}/gi;
+
+      const extractMediaUrls = (obj: any) => {
+        if (!obj) return;
+        if (typeof obj === 'string') {
+          const matches = obj.match(mediaRegex);
+          if (matches) {
+            matches.forEach(match => mediaUrlsToDelete.add(match));
+          }
+        } else if (typeof obj === 'object') {
+          Object.values(obj).forEach(extractMediaUrls);
+        }
+      };
+
+      for (const instance of instancesToDelete) {
+        extractMediaUrls(instance.content);
+        extractMediaUrls(instance.configuration);
+      }
+
+      // Delete the extracted media assets
+      for (const url of mediaUrlsToDelete) {
+        try {
+          await this.contentService.deleteByUrl(url);
+        } catch (e) {
+          console.error(`Failed to delete media asset ${url}`, e);
+        }
+      }
 
       const nodeIdsToDelete = instancesToDelete.map(i => i.spatialNodeId).filter(Boolean);
 
@@ -203,10 +263,8 @@ export class ExperiencesService {
     // Only update allowed fields
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.description !== undefined) updateData.description = data.description;
     if (data.targetPlaceId !== undefined) updateData.placeId = data.targetPlaceId;
     if (data.status !== undefined) updateData.status = data.status;
-    if (data.pubStatus !== undefined) updateData.pubStatus = data.pubStatus;
     if (data.version !== undefined) updateData.version = data.version;
 
     return this.prisma.experience.updateMany({

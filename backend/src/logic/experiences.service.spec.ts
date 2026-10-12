@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExperiencesService } from './experiences.service';
 import { PrismaService } from '../database/prisma.service';
+import { ContentService } from './content.service';
 
 describe('ExperiencesService', () => {
   let service: ExperiencesService;
@@ -16,11 +17,16 @@ describe('ExperiencesService', () => {
     },
   };
 
+  const mockContentService = {
+    deleteByUrl: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ExperiencesService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: ContentService, useValue: mockContentService },
       ],
     }).compile();
 

@@ -1,7 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { ARServiceHandler } from './ar-service.interface';
+
 
 @Injectable()
-export class StudentCornerService {
+export class StudentCornerService implements ARServiceHandler {
 
   async processEvent(payload: any, instanceData: any) {
     const { action, itemId } = payload;
@@ -19,7 +21,7 @@ export class StudentCornerService {
       return { status: 'success', data: items };
     }
 
-    return { status: 'success', message: 'Action not supported' };
+    throw new BadRequestException(`Action '${action}' not supported for Student Corner Service.`);
   }
 
   getSchema() {

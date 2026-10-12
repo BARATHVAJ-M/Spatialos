@@ -44,7 +44,7 @@ export function VisualEditor() {
 
   return (
     <div 
-      className="flex-1 bg-slate-700 relative overflow-hidden rounded-2xl border border-slate-700 m-4 shadow-inner"
+      className="flex-1 bg-slate-100 dark:bg-slate-700 relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 m-4 shadow-inner"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
@@ -62,8 +62,8 @@ export function VisualEditor() {
       />
       
       {/* Canvas Elements */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] border-2 border-dashed border-slate-600 rounded-3xl pointer-events-none flex items-center justify-center">
-        <span className="text-slate-400 font-medium">Spatial Origin (0,0,0)</span>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-3xl pointer-events-none flex items-center justify-center">
+        <span className="text-slate-500 dark:text-slate-400 font-medium">Spatial Origin (0,0,0)</span>
       </div>
 
       {nodes.map(node => (
@@ -72,8 +72,8 @@ export function VisualEditor() {
           onMouseDown={(e) => handleMouseDown(e, node.id)}
           className={`absolute p-4 rounded-xl cursor-move transition-shadow ${
             selectedNodeId === node.id 
-              ? 'ring-4 ring-indigo-500 bg-slate-800 shadow-2xl z-10' 
-              : 'bg-slate-800 hover:ring-2 ring-indigo-300 shadow-lg'
+              ? 'ring-4 ring-indigo-500 bg-white dark:bg-slate-800 shadow-2xl z-10' 
+              : 'bg-white dark:bg-slate-800 hover:ring-2 ring-indigo-300 shadow-lg'
           }`}
           style={{
             left: `calc(50% + ${node.transform.position.x}px)`,
@@ -88,8 +88,8 @@ export function VisualEditor() {
               {node.type === 'TRIGGER' && <BoxSelect className="w-5 h-5" />}
             </div>
             <div>
-              <p className="font-semibold text-white">{node.type}</p>
-              <p className="text-xs text-slate-400 font-mono">
+              <p className="font-semibold text-slate-900 dark:text-white">{node.type}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                 {Math.round(node.transform.position.x)}, {Math.round(node.transform.position.y)}
               </p>
             </div>

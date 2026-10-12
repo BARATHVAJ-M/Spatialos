@@ -25,6 +25,7 @@ describe('PlacementsController', () => {
       providers: [
         { provide: ExperiencesService, useValue: mockExperiencesService },
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: 'CACHE_MANAGER', useValue: { get: jest.fn(), set: jest.fn() } },
       ],
     }).compile();
 

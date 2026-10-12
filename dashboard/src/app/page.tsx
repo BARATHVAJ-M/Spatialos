@@ -6,8 +6,8 @@ export default function DashboardPage() {
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Overview</h1>
-          <p className="text-slate-400 mt-1 text-sm">SpatialOS Environment Health and Activity</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Overview</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">SpatialOS Environment Health and Activity</p>
         </div>
       </div>
 

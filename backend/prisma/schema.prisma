@@ -8,32 +8,46 @@ datasource db {
 }
 
 model Organization {
-  id                   String                @id @default(uuid()) @db.Uuid
-  name                 String                @db.VarChar(255)
-  slug                 String                @unique @db.VarChar(100)
-  createdAt            DateTime              @default(now())
-  componentDefinitions ComponentDefinition[]
-  content              ContentAsset[]
-  experiences          Experience[]
-  places               Place[]
-  serviceDefinitions   ServiceDefinition[]
-  serviceInstances     ServiceInstance[]
-  users                User[]
-  staffMembers         StaffDirectory[]
+  id                 String              @id @default(uuid()) @db.Uuid
+  name               String              @db.VarChar(255)
+  slug               String              @unique @db.VarChar(100)
+  supportEmail       String?             @db.VarChar(255)
+  domainContext      String?             @db.VarChar(100)
+  settings           Json?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @default(now()) @updatedAt
+  content            ContentAsset[]
+  experiences        Experience[]
+  places             Place[]
+  serviceDefinitions ServiceDefinition[]
+  serviceInstances   ServiceInstance[]
+  users              User[]
+  staffMembers       StaffDirectory[]
+  notifications      Notification[]
+  accessRequests     AccessRequest[]
 
   @@map("organizations")
 }
 
 model User {
-  id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @db.Uuid
-  name           String       @default("Admin User") @db.VarChar(255)
-  email          String       @unique
-  passwordHash   String       @default("") // Added for auth
-  loginAttempts  Int          @default(0)  // Added for auth lockout
-  lockedUntil    DateTime?                 // Added for auth lockout
-  role           String       @default("VIEWER")
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  id                      String       @id @default(uuid()) @db.Uuid
+  organizationId          String       @db.Uuid
+  name                    String       @default("Admin User") @db.VarChar(255)
+  email                   String       @unique
+  passwordHash            String       @default("") // Added for auth
+  loginAttempts           Int          @default(0) // Added for auth lockout
+  lockedUntil             DateTime? // Added for auth lockout
+  role                    String       @default("VIEWER")
+  preferences             Json? // Theme and other user preferences
+  isVerified              Boolean      @default(false)
+  verificationToken       String?
+  verificationTokenExpiry DateTime?
+  resetToken              String?
+  resetTokenExpiry        DateTime?
+  otpAttempts             Int          @default(0)
+  otpLockedUntil          DateTime?
+  lastOtpSentAt           DateTime?
+  organization            Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@map("users")
@@ -48,7 +62,7 @@ model Place {
   latitude       Float?
   longitude      Float?
   experiences    Experience[]
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   parent         Place?       @relation("PlaceHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children       Place[]      @relation("PlaceHierarchy")
 
@@ -58,68 +72,61 @@ model Place {
 }
 
 model Experience {
-  id             String        @id @default(uuid()) @db.Uuid
-  organizationId String        @db.Uuid
-  placeId        String        @db.Uuid
-  name           String        @db.VarChar(255)
-  version        Int           @default(1)
-  status         PublishStatus @default(DRAFT)
-  organization   Organization  @relation(fields: [organizationId], references: [id])
-  place          Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  spatialNodes   SpatialNode[]
+  id               String            @id @default(uuid()) @db.Uuid
+  organizationId   String            @db.Uuid
+  placeId          String            @db.Uuid
+  name             String            @db.VarChar(255)
+  version          Int               @default(1)
+  status           PublishStatus     @default(DRAFT)
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  place            Place             @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  spatialNodes     SpatialNode[]
   serviceInstances ServiceInstance[]
+  contentAssets    ContentAsset[]
 
   @@unique([placeId, status, version])
   @@map("experiences")
 }
 
 model ServiceInstance {
-  id                  String             @id @default(uuid()) @db.Uuid
-  organizationId      String             @db.Uuid
-  experienceId        String             @db.Uuid
-  spatialNodeId       String?            @db.Uuid
-  serviceDefinitionId String             @db.Uuid
-  name                String             @db.VarChar(255)
-  status              PublishStatus      @default(DRAFT)
+  id                  String            @id @default(uuid()) @db.Uuid
+  organizationId      String            @db.Uuid
+  experienceId        String            @db.Uuid
+  spatialNodeId       String?           @db.Uuid
+  serviceDefinitionId String            @db.Uuid
+  name                String            @db.VarChar(255)
+  status              PublishStatus     @default(DRAFT)
   configuration       Json?
   content             Json?
-  organization        Organization       @relation(fields: [organizationId], references: [id])
-  experience          Experience         @relation(fields: [experienceId], references: [id], onDelete: Cascade)
-  serviceDefinition   ServiceDefinition  @relation(fields: [serviceDefinitionId], references: [id])
+  organization        Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  experience          Experience        @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  serviceDefinition   ServiceDefinition @relation(fields: [serviceDefinitionId], references: [id], onDelete: Cascade)
+  spatialNodes        SpatialNode[]
 
   @@index([experienceId])
   @@map("service_instances")
 }
 
 model SpatialNode {
-  id           String     @id @default(uuid()) @db.Uuid
-  experienceId String     @db.Uuid
-  nodeType     NodeType
-  positionX    Float      @default(0)
-  positionY    Float      @default(0)
-  positionZ    Float      @default(0)
-  rotationX    Float      @default(0)
-  rotationY    Float      @default(0)
-  rotationZ    Float      @default(0)
-  scaleX       Float      @default(1)
-  scaleY       Float      @default(1)
-  scaleZ       Float      @default(1)
-  referenceId  String     @db.Uuid
-  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  id              String           @id @default(uuid()) @db.Uuid
+  experienceId    String           @db.Uuid
+  nodeType        NodeType
+  positionX       Float            @default(0)
+  positionY       Float            @default(0)
+  positionZ       Float            @default(0)
+  rotationX       Float            @default(0)
+  rotationY       Float            @default(0)
+  rotationZ       Float            @default(0)
+  scaleX          Float            @default(1)
+  scaleY          Float            @default(1)
+  scaleZ          Float            @default(1)
+  referenceId     String           @db.Uuid
+  experience      Experience       @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  serviceInstance ServiceInstance? @relation(fields: [referenceId], references: [id], onDelete: Cascade)
 
   @@index([experienceId])
+  @@index([referenceId])
   @@map("spatial_nodes")
-}
-
-model ComponentDefinition {
-  id             String              @id @default(uuid()) @db.Uuid
-  organizationId String              @db.Uuid
-  name           String              @db.VarChar(255)
-  schema         Json
-  organization   Organization        @relation(fields: [organizationId], references: [id])
-  components     ComponentTemplate[]
-
-  @@map("component_definitions")
 }
 
 model ServiceDefinition {
@@ -133,7 +140,7 @@ model ServiceDefinition {
   contentSchema       Json?
   payloadSchema       Json?
   actions             ActionDefinition[]
-  organization        Organization       @relation(fields: [organizationId], references: [id])
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   serviceInstances    ServiceInstance[]
 
   @@map("service_definitions")
@@ -142,22 +149,16 @@ model ServiceDefinition {
 model ContentAsset {
   id             String       @id @default(uuid()) @db.Uuid
   organizationId String       @db.Uuid
+  experienceId   String?      @db.Uuid
   assetType      String
   url            String
   metadata       Json?
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  experience     Experience?  @relation(fields: [experienceId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId])
+  @@index([experienceId])
   @@map("content_assets")
-}
-
-model ComponentTemplate {
-  id                    String              @id @default(uuid()) @db.Uuid
-  componentDefinitionId String              @db.Uuid
-  name                  String              @db.VarChar(255)
-  uiLayout              Json
-  definition            ComponentDefinition @relation(fields: [componentDefinitionId], references: [id])
-
-  @@map("component_templates")
 }
 
 model ActionDefinition {
@@ -167,21 +168,9 @@ model ActionDefinition {
   serviceType         String
   targetUrl           String?
   payloadMap          Json?
-  service             ServiceDefinition @relation(fields: [serviceDefinitionId], references: [id])
+  service             ServiceDefinition @relation(fields: [serviceDefinitionId], references: [id], onDelete: Cascade)
 
   @@map("action_definitions")
-}
-
-model analytics_events {
-  id             String   @id @db.Uuid
-  organizationId String   @db.Uuid
-  placeId        String   @db.Uuid
-  userId         String?  @db.Uuid
-  eventType      String
-  metadata       Json?
-  createdAt      DateTime @default(now())
-
-  @@index([placeId, eventType])
 }
 
 model AuthAuditLog {
@@ -192,6 +181,8 @@ model AuthAuditLog {
   status    String   @db.VarChar(50) // SUCCESS, FAILED, LOCKED
   timestamp DateTime @default(now())
 
+  @@index([email])
+  @@index([userId])
   @@map("auth_audit_logs")
 }
 
@@ -212,22 +203,57 @@ model StaffDirectory {
   organizationId  String       @db.Uuid
   staffId         String       @unique @db.VarChar(100) // The college's internal ID
   name            String       @db.VarChar(255)
-  photoUrl        String?      
+  photoUrl        String?
   designation     String?      @db.VarChar(255)
   department      String?      @db.VarChar(255)
   phone           String?      @db.VarChar(50)
   email           String?      @db.VarChar(255)
-  subjects        Json?        // Array of subjects
-  classesInCharge Json?        // Array of classes
+  subjects        Json? // Array of subjects
+  classesInCharge Json? // Array of classes
   room            String?      @db.VarChar(100)
-  timetable       Json?        // Structured timetable data
+  timetable       Json? // Structured timetable data
   status          String       @default("ACTIVE") @db.VarChar(50)
-  organization    Organization @relation(fields: [organizationId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([department])
   @@map("staff_directory")
+}
+
+model Notification {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  title          String   @db.VarChar(255)
+  message        String
+  type           String   @db.VarChar(50) // SYSTEM, ALERT, IAM
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model AccessRequest {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @db.Uuid
+  name           String        @db.VarChar(255)
+  email          String        @db.VarChar(255)
+  role           String        @db.VarChar(50)
+  status         RequestStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("access_requests")
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

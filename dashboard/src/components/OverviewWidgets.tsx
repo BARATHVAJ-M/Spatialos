@@ -27,10 +27,10 @@ interface HealthItem {
 }
 
 const DEFAULT_HEALTH_ITEMS: HealthItem[] = [
-  { label: 'Backend API', icon: Network, status: '...', color: 'text-slate-400', bg: 'bg-slate-900' },
-  { label: 'Database', icon: Database, status: '...', color: 'text-slate-400', bg: 'bg-slate-900' },
-  { label: 'Asset Storage', icon: HardDrive, status: '...', color: 'text-slate-400', bg: 'bg-slate-900' },
-  { label: 'AR Engine', icon: Glasses, status: '...', color: 'text-slate-400', bg: 'bg-slate-900' },
+  { label: 'Backend API', icon: Network, status: '...', color: 'text-slate-500 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-900' },
+  { label: 'Database', icon: Database, status: '...', color: 'text-slate-500 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-900' },
+  { label: 'Asset Storage', icon: HardDrive, status: '...', color: 'text-slate-500 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-900' },
+  { label: 'AR Engine', icon: Glasses, status: '...', color: 'text-slate-500 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-900' },
 ];
 
 export function SystemHealth() {
@@ -51,16 +51,16 @@ export function SystemHealth() {
 
 
   return (
-    <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm p-5">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Activity className="w-5 h-5 text-slate-400" />
-        <h3 className="text-base font-semibold text-slate-200">System Health</h3>
+        <Activity className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+        <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">System Health</h3>
       </div>
       <div className="grid grid-cols-2 gap-3">
         {healthItems.map((item) => {
           const Icon = item.icon;
           return (
-          <div key={item.label} className={`p-3 rounded-lg border border-slate-800 ${item.bg}`}>
+          <div key={item.label} className={`p-3 rounded-lg border border-slate-200 dark:border-slate-800 ${item.bg}`}>
             <div className="flex items-center justify-between mb-2">
               <Icon className={`w-5 h-5 ${item.color}`} />
               {item.status === 'Healthy' ? (
@@ -69,7 +69,7 @@ export function SystemHealth() {
                 <AlertCircle className={`w-4 h-4 ${item.color}`} />
               )}
             </div>
-            <p className="text-xs font-medium text-slate-400">{item.label}</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{item.label}</p>
             <p className={`text-xs font-bold mt-0.5 ${item.color}`}>
               {item.status} {item.message && <span className="font-normal opacity-80">({item.message})</span>}
             </p>
@@ -91,8 +91,8 @@ export function QuickActions() {
   ];
 
   return (
-    <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm p-5">
-      <h3 className="text-base font-semibold text-slate-200 mb-4">Quick Actions</h3>
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+      <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Quick Actions</h3>
       <div className="flex flex-col gap-2">
         {ACTIONS.map((action) => {
           const ActionIcon = action.icon;
@@ -102,10 +102,10 @@ export function QuickActions() {
             href={action.href}
             className={`flex items-center gap-3 p-2.5 rounded-lg text-sm font-medium transition-colors ${
               action.primary 
-                ? 'bg-slate-900 text-white hover:bg-slate-800'
+                ? 'bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-white dark:bg-slate-800'
                 : action.color 
                   ? action.color 
-                  : 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700'
+                  : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-700'
             }`}
           >
             <ActionIcon className="w-4 h-4" />
@@ -140,9 +140,9 @@ export function RecentActivity() {
   }, []);
 
   return (
-    <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm p-5 flex-1">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 flex-1">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-slate-200">Recent Activity</h3>
+        <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">Recent Activity</h3>
       </div>
       <div className="space-y-4">
         {activities.map((act) => (
@@ -154,10 +154,10 @@ export function RecentActivity() {
               }`} />
             </div>
             <div>
-              <p className="text-sm text-slate-200">
+              <p className="text-sm text-slate-800 dark:text-slate-200">
                 <span className="font-semibold">{act.action}</span> {act.entity}
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">{act.time}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{act.time}</p>
             </div>
           </div>
         ))}

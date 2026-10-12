@@ -49,6 +49,10 @@ export default function UsersPage() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
+      alert("Please fill out all required fields.");
+      return;
+    }
     setIsSaving(true);
     try {
       await apiFetch('/overview/users', {
@@ -130,28 +134,28 @@ export default function UsersPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Users & Access</h1>
-          <p className="text-slate-400 mt-1 text-sm">Manage administrative members, access controls, and security policies</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Users & Access</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Manage administrative members, access controls, and security policies</p>
         </div>
         <button 
           onClick={() => {
             setFormData({ name: '', email: '', password: '', role: 'EDITOR' });
             setIsCreateModalOpen(true);
           }}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm text-sm"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-slate-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm text-sm"
         >
           <Plus className="w-4 h-4" /> Add User
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-700 mb-6 shrink-0">
+      <div className="flex border-b border-slate-200 dark:border-slate-700 mb-6 shrink-0">
         <button 
           onClick={() => setActiveTab('users')}
           className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
             activeTab === 'users' 
               ? 'border-indigo-500 text-indigo-400' 
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700'
           }`}
         >
           Members ({users.length})
@@ -161,7 +165,7 @@ export default function UsersPage() {
           className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
             activeTab === 'roles' 
               ? 'border-indigo-500 text-indigo-400' 
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700'
           }`}
         >
           Roles & Permissions
@@ -170,15 +174,15 @@ export default function UsersPage() {
 
       <div className="flex-1">
         {activeTab === 'users' ? (
-          <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             {/* Toolbar */}
-            <div className="p-4 border-b border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="relative max-w-md w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400" />
                 <input 
                   type="text" 
                   placeholder="Search members by name or email..." 
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 />
               </div>
             </div>
@@ -187,7 +191,7 @@ export default function UsersPage() {
             <div className="overflow-x-auto min-h-[400px]">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-900 border-b border-slate-700 text-xs uppercase font-semibold text-slate-400 tracking-wider">
+                  <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
                     <th className="p-4">Name</th>
                     <th className="p-4">Email</th>
                     <th className="p-4">Role</th>
@@ -196,31 +200,31 @@ export default function UsersPage() {
                     <th className="p-4 text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={6} className="p-12 text-center text-slate-400">
+                      <td colSpan={6} className="p-12 text-center text-slate-500 dark:text-slate-400">
                         <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin mx-auto" />
                       </td>
                     </tr>
                   ) : users.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-12 text-center text-slate-400 bg-slate-900 border-dashed">
+                      <td colSpan={6} className="p-12 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 border-dashed">
                         No users available.
                       </td>
                     </tr>
                   ) : users.map((usr) => (
-                    <tr key={usr.id} className="hover:bg-slate-700 transition-colors">
+                    <tr key={usr.id} className="hover:bg-slate-100 dark:bg-slate-700 transition-colors">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 font-semibold text-sm uppercase">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 font-semibold text-sm uppercase">
                             {usr.name?.[0] || 'U'}
                           </div>
-                          <span className="font-medium text-white">{usr.name}</span>
+                          <span className="font-medium text-slate-900 dark:text-white">{usr.name}</span>
                         </div>
                       </td>
-                      <td className="p-4 text-sm text-slate-400">{usr.email}</td>
-                      <td className="p-4 text-sm text-slate-400">
+                      <td className="p-4 text-sm text-slate-500 dark:text-slate-400">{usr.email}</td>
+                      <td className="p-4 text-sm text-slate-500 dark:text-slate-400">
                         <span className="inline-flex items-center gap-1">
                           <Shield className="w-3.5 h-3.5 text-indigo-500" />
                           {usr.role}
@@ -233,23 +237,23 @@ export default function UsersPage() {
                           {usr.status}
                         </span>
                       </td>
-                      <td className="p-4 text-sm text-slate-400">{usr.activity}</td>
+                      <td className="p-4 text-sm text-slate-500 dark:text-slate-400">{usr.activity}</td>
                       <td className="p-4 text-center relative">
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveMenu(activeMenu === usr.id ? null : usr.id);
                           }}
-                          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-700 rounded-md transition-colors"
+                          className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:bg-slate-700 rounded-md transition-colors"
                         >
                           <MoreVertical className="w-4 h-4" />
                         </button>
                         
                         {activeMenu === usr.id && (
-                          <div ref={menuRef} className="absolute right-8 top-10 w-48 bg-slate-800 rounded-lg shadow-lg border border-slate-700 py-1 z-10 text-left">
+                          <div ref={menuRef} className="absolute right-8 top-10 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-10 text-left">
                             <button 
                               onClick={() => openEditModal(usr)}
-                              className="w-full px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 flex items-center gap-2"
+                              className="w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-700 flex items-center gap-2"
                             >
                               <Edit2 className="w-4 h-4" /> Edit Details
                             </button>
@@ -261,7 +265,7 @@ export default function UsersPage() {
                                 <Unlock className="w-4 h-4" /> Unlock Account
                               </button>
                             )}
-                            <div className="h-px bg-slate-700 my-1"></div>
+                            <div className="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
                             <button 
                               onClick={() => openDeleteModal(usr)}
                               className="w-full px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"
@@ -278,20 +282,20 @@ export default function UsersPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm p-6 space-y-4">
-            <h3 className="text-base font-semibold text-slate-200">Security Roles</h3>
-            <p className="text-sm text-slate-400">Backend roles govern access privileges strictly. Permissions visible in the UI represent localized rules.</p>
-            <div className="border border-slate-700 rounded-lg p-4 bg-slate-900 space-y-2">
-              <p className="text-sm font-semibold text-slate-300">ADMIN</p>
-              <p className="text-xs text-slate-400">Full platform execution, publishing rights, user provisioning, and service configuration overrides.</p>
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-4">
+            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">Security Roles</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Backend roles govern access privileges strictly. Permissions visible in the UI represent localized rules.</p>
+            <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-slate-50 dark:bg-slate-900 space-y-2">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">ADMIN</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Full platform execution, publishing rights, user provisioning, and service configuration overrides.</p>
             </div>
-            <div className="border border-slate-700 rounded-lg p-4 bg-slate-900 space-y-2">
-              <p className="text-sm font-semibold text-slate-300">EDITOR</p>
-              <p className="text-xs text-slate-400">Create, edit, duplicate Places & Experiences. Save drafts. Cannot directly publish changes.</p>
+            <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-slate-50 dark:bg-slate-900 space-y-2">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">EDITOR</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Create, edit, duplicate Places & Experiences. Save drafts. Cannot directly publish changes.</p>
             </div>
-            <div className="border border-slate-700 rounded-lg p-4 bg-slate-900 space-y-2">
-              <p className="text-sm font-semibold text-slate-300">VIEWER</p>
-              <p className="text-xs text-slate-400">Read-only access to specific dashboards and reports.</p>
+            <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-slate-50 dark:bg-slate-900 space-y-2">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">VIEWER</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Read-only access to specific dashboards and reports.</p>
             </div>
           </div>
         )}
@@ -299,54 +303,54 @@ export default function UsersPage() {
 
       {/* CREATE USER MODAL */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-slate-800">
-              <h2 className="text-lg font-bold text-slate-200">Add New User</h2>
-              <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+        <div className="fixed inset-0 bg-slate-50 dark:bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Add New User</h2>
+              <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-500 dark:text-slate-400 hover:text-slate-600 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleCreateUser} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
                 <input 
                   type="text" 
                   required
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
                   placeholder="John Doe"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
                 <input 
                   type="email" 
                   required
                   value={formData.email}
                   onChange={e => setFormData({...formData, email: e.target.value})}
-                  className="w-full px-3 py-2 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
                   placeholder="john@spatialos.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
                 <input 
                   type="password" 
                   required
                   value={formData.password}
                   onChange={e => setFormData({...formData, password: e.target.value})}
-                  className="w-full px-3 py-2 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
                   placeholder="••••••••"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Role</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Role</label>
                 <select 
                   value={formData.role}
                   onChange={e => setFormData({...formData, role: e.target.value})}
-                  className="w-full px-3 py-2 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-800"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800"
                 >
                   <option value="ADMIN">ADMIN</option>
                   <option value="EDITOR">EDITOR</option>
@@ -357,14 +361,14 @@ export default function UsersPage() {
                 <button 
                   type="button" 
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-800 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={isSaving}
-                  className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-medium bg-indigo-600 text-slate-900 dark:text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   {isSaving && <RefreshCw className="w-4 h-4 animate-spin" />}
                   Create User
@@ -377,41 +381,41 @@ export default function UsersPage() {
 
       {/* EDIT USER MODAL */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-slate-800">
-              <h2 className="text-lg font-bold text-slate-200">Edit User Details</h2>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+        <div className="fixed inset-0 bg-slate-50 dark:bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Edit User Details</h2>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-500 dark:text-slate-400 hover:text-slate-600 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
                 <input 
                   type="text" 
                   required
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
                 <input 
                   type="email" 
                   disabled
                   value={formData.email}
-                  className="w-full px-3 py-2 border border-slate-700 bg-slate-900 text-slate-400 rounded-lg focus:outline-none cursor-not-allowed" 
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 rounded-lg focus:outline-none cursor-not-allowed" 
                 />
-                <p className="text-xs text-slate-400 mt-1">Email address cannot be changed</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Email address cannot be changed</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Role</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Role</label>
                 <select 
                   value={formData.role}
                   onChange={e => setFormData({...formData, role: e.target.value})}
-                  className="w-full px-3 py-2 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-800"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800"
                 >
                   <option value="ADMIN">ADMIN</option>
                   <option value="EDITOR">EDITOR</option>
@@ -422,14 +426,14 @@ export default function UsersPage() {
                 <button 
                   type="button" 
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-800 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={isSaving}
-                  className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-medium bg-indigo-600 text-slate-900 dark:text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   {isSaving && <RefreshCw className="w-4 h-4 animate-spin" />}
                   Save Changes
@@ -442,26 +446,26 @@ export default function UsersPage() {
 
       {/* DELETE CONFIRMATION MODAL */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden p-6 text-center">
+        <div className="fixed inset-0 bg-slate-50 dark:bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden p-6 text-center">
             <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-6 h-6 text-red-400" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Delete {selectedUser?.name}?</h3>
-            <p className="text-slate-400 text-sm mb-6">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Delete {selectedUser?.name}?</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
               Are you sure you want to permanently delete this user account? This action cannot be undone and they will lose all access to the system.
             </p>
             <div className="flex items-center gap-3 w-full">
               <button 
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-300 bg-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleDeleteUser}
                 disabled={isSaving}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Delete User'}
               </button>

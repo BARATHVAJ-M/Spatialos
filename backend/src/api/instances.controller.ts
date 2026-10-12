@@ -1,9 +1,10 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { InstancesService } from '../ar_services/instances.service';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
+import { Public } from '../auth/decorators/public.decorator';
 
 @UseGuards(JwtAuthGuard)
-@Controller('api/spatial-nodes/:spatialNodeId/services')
+@Controller('api/v1/spatial-nodes/:spatialNodeId/services')
 export class InstancesController {
   constructor(private readonly instancesService: InstancesService) {}
 
@@ -40,5 +41,11 @@ export class InstancesController {
   @Post(':id/publish')
   publish(@Param('id') id: string) {
     return this.instancesService.publish(id);
+  }
+
+  @Public()
+  @Post(':id/action')
+  executeAction(@Param('id') id: string, @Body() payload: any) {
+    return this.instancesService.executeAction(id, payload);
   }
 }

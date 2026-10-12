@@ -1,11 +1,17 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import * as fs from 'fs';
-import { join } from 'path';
+import { STORAGE_ADAPTER, IStorageAdapter } from './storage/storage.interface';
+const FileType = require('file-type');
 
 @Injectable()
 export class ContentService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(ContentService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    @Inject(STORAGE_ADAPTER) private readonly storageAdapter: IStorageAdapter
+  ) {}
 
   async findAll(organizationId: string) {
     return this.prisma.contentAsset.findMany({
@@ -39,19 +45,32 @@ export class ContentService {
     const maxVideoSize = 50 * 1024 * 1024;
 
     if (isImage && file.size > maxPhotoSize) {
-      this.deleteFileSafely(file.path);
+      await this.deleteTempFileSafely(file.path);
       throw new BadRequestException('Image exceeds 10MB limit');
     }
 
     if (isVideo && file.size > maxVideoSize) {
-      this.deleteFileSafely(file.path);
+      await this.deleteTempFileSafely(file.path);
       throw new BadRequestException('Video exceeds 50MB limit');
     }
 
     if (!isImage && !isVideo) {
-      this.deleteFileSafely(file.path);
+      await this.deleteTempFileSafely(file.path);
       throw new BadRequestException('Only images and videos are allowed');
     }
+
+    // Deep MIME-type verification (prevent spoofing)
+    const chunk = await this.readFirstChunk(file.path);
+    const type = await FileType.fromBuffer(chunk);
+    
+    if (!type || (!type.mime.startsWith('image/') && !type.mime.startsWith('video/'))) {
+      this.logger.warn(`Spoofed file detected and rejected. Original name: ${file.originalname}, Real mime: ${type?.mime}`);
+      await this.deleteTempFileSafely(file.path);
+      throw new BadRequestException('Invalid file signature. File may be spoofed or corrupted.');
+    }
+
+    // Save file via Storage Adapter
+    const savedUrl = await this.storageAdapter.saveFile(file, file.filename);
 
     // Save to ContentAsset DB
     const id = require('crypto').randomUUID();
@@ -82,11 +101,10 @@ export class ContentService {
       throw new BadRequestException('Asset not found');
     }
 
-    // Delete from disk
+    // Delete from storage
     const meta = asset.metadata as any;
     const filename = (meta && meta.filename) ? meta.filename : asset.url.replace('/storage/', '').replace('/media/', '');
-    const filepath = join(process.cwd(), 'storage', filename);
-    this.deleteFileSafely(filepath);
+    await this.deleteFileSafely(filename);
 
     // Delete from DB
     return this.prisma.contentAsset.delete({
@@ -94,13 +112,61 @@ export class ContentService {
     });
   }
 
-  private deleteFileSafely(filePath: string) {
-    if (fs.existsSync(filePath)) {
+  async deleteByUrl(url: string) {
+    const asset = await this.prisma.contentAsset.findFirst({
+      where: { url },
+    });
+
+    if (!asset) {
+      return null;
+    }
+
+    // Delete from storage
+    const meta = asset.metadata as any;
+    const filename = (meta && meta.filename) ? meta.filename : asset.url.replace('/storage/', '').replace('/media/', '');
+    await this.deleteFileSafely(filename);
+
+    // Delete from DB
+    return this.prisma.contentAsset.delete({
+      where: { id: asset.id },
+    });
+  }
+
+  private async deleteFileSafely(filename: string) {
+    try {
+      await this.storageAdapter.deleteFile(filename);
+    } catch (err: any) {
+      this.logger.error(`Failed to delete file: ${filename}`, err.stack);
+    }
+  }
+
+  private async deleteTempFileSafely(filePath: string) {
+    if (filePath && fs.existsSync(filePath)) {
       try {
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error(`Failed to delete file: ${filePath}`, err);
+        await fs.promises.unlink(filePath);
+      } catch (err: any) {
+        this.logger.error(`Failed to delete temp file: ${filePath}`, err.stack);
       }
     }
+  }
+
+  private async readFirstChunk(filePath: string): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      // For temp files handled by multer
+      if (fs.existsSync(filePath)) {
+        const stream = fs.createReadStream(filePath, { start: 0, end: 4100 });
+        let buffer = Buffer.alloc(0);
+        
+        stream.on('data', (chunk) => {
+          buffer = Buffer.concat([buffer, chunk as Buffer]);
+        });
+        
+        stream.on('end', () => resolve(buffer));
+        stream.on('error', (err) => reject(err));
+      } else {
+        // Fallback if file was deleted early
+        resolve(Buffer.alloc(0));
+      }
+    });
   }
 }

@@ -10,7 +10,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // Do not render Sidebar and TopNav on the login page
   if (pathname === '/login') {
     return (
-      <main className="flex-1 overflow-auto bg-slate-900 min-h-screen">
+      <main className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-900 min-h-screen">
         {children}
       </main>
     );
@@ -19,7 +19,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-900">
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-slate-900">
         <TopNav />
         <main className="flex-1 overflow-auto relative">
           {children}

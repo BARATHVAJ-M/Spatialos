@@ -1,6 +1,6 @@
 // Generic API Client
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
 const ORG_ID = '00000000-0000-0000-0000-000000000000'; // Default org from seed
 
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

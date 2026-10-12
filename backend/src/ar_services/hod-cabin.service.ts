@@ -1,8 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { StaffRepository } from '../database/repositories/staff.repository';
+import { ARServiceHandler } from './ar-service.interface';
+
 
 @Injectable()
-export class HodCabinService {
+export class HodCabinService implements ARServiceHandler {
   constructor(private readonly staffRepository: StaffRepository) {}
 
   async processEvent(payload: any, instanceData: any, organizationId: string) {
@@ -27,7 +29,11 @@ export class HodCabinService {
        return { status: 'success', data: match };
     }
 
-    return { status: 'success', message: 'Action not supported' };
+    if (action === 'book_appointment') {
+      return { status: 'success', action: 'book_appointment', message: 'Appointment request logged (mock)' };
+    }
+
+    throw new BadRequestException(`Action '${action}' not supported for HOD Cabin Service.`);
   }
 
   getSchema() {

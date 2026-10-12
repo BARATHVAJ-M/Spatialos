@@ -1,14 +1,17 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { ARServiceHandler } from './ar-service.interface';
+
 
 @Injectable()
-export class ComplaintBoxService {
+export class ComplaintBoxService implements ARServiceHandler {
   /**
    * The Complaint Box is a pass-through service for V1.
    * SpatialOS does not store the complaint data to protect privacy.
    * It relies on a configured Google Form URL.
    */
-  async processEvent(payload: any, instanceConfiguration: any) {
-    if (!instanceConfiguration || !instanceConfiguration.googleFormUrl) {
+  async processEvent(payload: any, instance: any) {
+    const config = instance?.configuration || {};
+    if (!config.googleFormUrl) {
       throw new BadRequestException('Complaint Box is not properly configured with a Google Form URL.');
     }
 
@@ -20,8 +23,8 @@ export class ComplaintBoxService {
       return {
         status: 'success',
         action: 'open_url',
-        url: instanceConfiguration.googleFormUrl,
-        privacyMessage: instanceConfiguration.privacyMessage || 'Your personal details are not stored in SpatialOS.'
+        url: config.googleFormUrl,
+        privacyMessage: config.privacyMessage || 'Your personal details are not stored in SpatialOS.'
       };
     }
 

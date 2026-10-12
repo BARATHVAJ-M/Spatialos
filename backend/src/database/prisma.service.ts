@@ -11,7 +11,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       await this.$connect();
       this.logger.log('Successfully connected to spatialos_db!');
     } catch (error) {
-      this.logger.error('Failed to connect to PostgreSQL database. Verify DATABASE_URL in .env.', error);
+      this.logger.error('CRITICAL: Failed to connect to PostgreSQL database. Verify DATABASE_URL in .env.', error);
+      process.exit(1); // Force failure so orchestrators can restart
     }
   }
 
