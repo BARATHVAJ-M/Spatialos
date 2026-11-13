@@ -379,19 +379,19 @@ engine/
 
 | Layer | Modules | File Count |
 |-------|---------|-----------|
-| L01 core | contracts, math, types, error | 20 |
-| L02 platform | session, permissions, capability | 7 |
-| L03 sensing | camera, depth, imu | 7 |
-| L04 tracking | slam, planes, anchors, relocalization | 11 |
-| L05 renderer | core, camera, assets, materials, lighting, reticle | 17 |
-| L06 vision | hands, landmarks, depth_ml, segmentation | 10 |
-| L07 scenegraph | tree, model, animation, state | 11 |
-| L08 interaction | raycast, gestures, events, bounds | 11 |
-| L09 audio | spatial, player | 6 |
-| L10 network | sync, protocol | 5 |
-| L11 bridge | flutter, engine, openxr | 9 |
-| L12 diagnostics | metrics, overlay, logging | 7 |
-| **TOTAL** | **37 modules** | **121 files** |
+| L01 core | contracts (7), math (8), types (4), error (3) | 22 |
+| L02 platform | session (3), permissions (2), capability (2) | 7 |
+| L03 sensing | camera (3), depth (3), imu (2) | 8 |
+| L04 tracking | slam (3), planes (3), anchors (3), relocalization (2) | 11 |
+| L05 renderer | core (3), camera (2), assets (3), materials (3), lighting (3), reticle (3) | 17 |
+| L06 vision | hands (3), landmarks (3), depth_ml (2), segmentation (2) | 10 |
+| L07 scenegraph | tree (3), model (3), animation (3), state (2) | 11 |
+| L08 interaction | raycast (3), gestures (3), events (2), bounds (2) | 10 |
+| L09 audio | spatial (3), player (3) | 6 |
+| L10 network | sync (3), protocol (2) | 5 |
+| L11 bridge | flutter (4), engine (3), openxr (3) | 10 |
+| L12 diagnostics | metrics (3), overlay (2), logging (2) | 7 |
+| **TOTAL** | **37 modules** | **124 files** |
 
 ---
 
@@ -484,3 +484,4 @@ Phase 3B ── + network/sync + network/protocol
 ```
 
 > Every phase compiles and runs independently. Phase 2 files are absent from Phase 1 build.
+
