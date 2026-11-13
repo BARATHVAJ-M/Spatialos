@@ -67,6 +67,9 @@ dist/
 *.jks
 *.keystore
 key.properties
+local.properties
+.gradle/
+build/
 builds/
 AR-ENGINE/build/
 admin_app/build/
