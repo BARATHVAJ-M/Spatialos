@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:ar_flutter_plugin_flutterflow/ar_flutter_plugin.dart';
-import 'package:ar_flutter_plugin_flutterflow/datatypes/config_planedetection.dart';
-import 'package:ar_flutter_plugin_flutterflow/managers/ar_anchor_manager.dart';
-import 'package:ar_flutter_plugin_flutterflow/managers/ar_object_manager.dart';
-import 'package:ar_flutter_plugin_flutterflow/managers/ar_session_manager.dart';
-import 'package:ar_flutter_plugin_flutterflow/models/ar_node.dart';
-import 'package:ar_flutter_plugin_flutterflow/models/ar_hittest_result.dart';
-import 'package:ar_flutter_plugin_flutterflow/datatypes/node_types.dart' as ar_node_type;
+import 'package:ar_flutter_plugin/ar_flutter_plugin.dart';
+import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
+import 'package:ar_flutter_plugin/managers/ar_anchor_manager.dart';
+import 'package:ar_flutter_plugin/managers/ar_object_manager.dart';
+import 'package:ar_flutter_plugin/managers/ar_session_manager.dart';
+import 'package:ar_flutter_plugin/models/ar_node.dart';
+import 'package:ar_flutter_plugin/models/ar_hittest_result.dart';
+import 'package:ar_flutter_plugin/datatypes/node_types.dart' as ar_node_type;
 import 'package:vector_math/vector_math_64.dart' as vector_math;
 
-import 'package:ar_flutter_plugin_flutterflow/managers/ar_location_manager.dart';
+import 'package:ar_flutter_plugin/managers/ar_location_manager.dart';
 
-import 'ar_session_manager_adapter.dart';
 import 'ar_anchor_manager_adapter.dart';
 import 'ar_plane_detector_adapter.dart';
 import '../core/bootstrap_pipeline.dart';

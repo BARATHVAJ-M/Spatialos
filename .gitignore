@@ -53,7 +53,7 @@ dist/
 *.sqlite
 *.sqlite-journal
 
-# Binaries and APKs
+# Binaries, Archives and Keystores
 *.apk
 *.aab
 *.ipa
@@ -61,6 +61,12 @@ dist/
 *.dll
 *.so
 *.dylib
+*.zip
+*.tar.gz
+*.tgz
+*.jks
+*.keystore
+key.properties
 builds/
 AR-ENGINE/build/
 admin_app/build/
@@ -80,3 +86,5 @@ temp/
 coverage/
 .nyc_output/
 _ssl_disabled/
+unwanted/
+

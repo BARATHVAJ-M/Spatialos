@@ -27,6 +27,7 @@ class FakeApiService implements ApiService {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('ApiArContentRepository', () {
     test('returns empty list if response is unsuccessful', () async {
       final fakeApi = FakeApiService(

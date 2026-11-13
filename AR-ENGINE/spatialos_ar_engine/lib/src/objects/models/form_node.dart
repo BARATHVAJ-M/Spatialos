@@ -1,5 +1,4 @@
 import 'spatial_node.dart';
-import 'transform_3d.dart';
 
 class FormNode extends SpatialNode {
   final List<String> fields;

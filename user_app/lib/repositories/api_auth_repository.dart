@@ -42,7 +42,7 @@ class ApiAuthRepository implements IAuthRepository {
   }
 
   @override
-  Future<UserModel> register(String name, String email, String password) async {
+  Future<void> register(String name, String email, String password) async {
     final response = await _apiService.post('/auth/register', data: {
       'name': name,
       'email': email,
@@ -51,22 +51,8 @@ class ApiAuthRepository implements IAuthRepository {
 
     final resData = response.data;
     if (resData != null && resData['success'] == true) {
-      final token = resData['data']['token'];
-      final userJson = resData['data']['user'];
-      await _apiService.saveToken(token);
-
-      _currentUser = UserModel(
-        id: userJson['id'] ?? 'user-1',
-        name: userJson['name'] ?? name,
-        email: userJson['email'] ?? email,
-        role: userJson['role'] ?? 'USER',
-        status: 'ACTIVE',
-        lastLogin: DateTime.now(),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      await _cacheUser(_currentUser!);
-      return _currentUser!;
+      // Registration successful, backend sent email.
+      return;
     }
     throw Exception(resData?['message'] ?? 'Registration failed against server');
   }
@@ -76,6 +62,42 @@ class ApiAuthRepository implements IAuthRepository {
       final str = jsonEncode(user.toJson());
       await _storage.write(key: _userStorageKey, value: str);
     } catch (_) {}
+  }
+
+  @override
+  Future<void> verifyEmail(String email, String otp) async {
+    final response = await _apiService.post('/auth/verify-email', data: {
+      'email': email,
+      'otp': otp,
+    });
+    final resData = response.data;
+    if (resData == null || resData['success'] != true) {
+      throw Exception(resData?['message'] ?? 'Failed to verify OTP');
+    }
+  }
+
+  @override
+  Future<void> forgotPassword(String email) async {
+    final response = await _apiService.post('/auth/forgot-password', data: {
+      'email': email,
+    });
+    final resData = response.data;
+    if (resData == null || resData['success'] != true) {
+      throw Exception(resData?['message'] ?? 'Failed to send OTP');
+    }
+  }
+
+  @override
+  Future<void> resetPassword(String email, String otp, String newPassword) async {
+    final response = await _apiService.post('/auth/reset-password', data: {
+      'email': email,
+      'otp': otp,
+      'newPassword': newPassword,
+    });
+    final resData = response.data;
+    if (resData == null || resData['success'] != true) {
+      throw Exception(resData?['message'] ?? 'Failed to reset password');
+    }
   }
 
   @override

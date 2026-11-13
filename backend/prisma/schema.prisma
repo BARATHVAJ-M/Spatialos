@@ -101,7 +101,6 @@ model ServiceInstance {
   organization        Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   experience          Experience        @relation(fields: [experienceId], references: [id], onDelete: Cascade)
   serviceDefinition   ServiceDefinition @relation(fields: [serviceDefinitionId], references: [id], onDelete: Cascade)
-  spatialNodes        SpatialNode[]
 
   @@index([experienceId])
   @@map("service_instances")
@@ -120,9 +119,8 @@ model SpatialNode {
   scaleX          Float            @default(1)
   scaleY          Float            @default(1)
   scaleZ          Float            @default(1)
-  referenceId     String           @db.Uuid
+  referenceId     String?          @db.Uuid
   experience      Experience       @relation(fields: [experienceId], references: [id], onDelete: Cascade)
-  serviceInstance ServiceInstance? @relation(fields: [referenceId], references: [id], onDelete: Cascade)
 
   @@index([experienceId])
   @@index([referenceId])

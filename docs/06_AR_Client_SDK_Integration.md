@@ -184,6 +184,4 @@ App displays the toast. Zero hardcoded cafe logic was used on the phone.
 
 We have successfully mapped the entire journey from the Database rows (`02`) all the way to the code inside the AR Mobile App (`06`). 
 
-There is only one major component of the SpatialOS platform left un-mapped: **The Admin Dashboard** (The Web App where the College or Cafe owner actually drags and drops these components without writing code). 
-
-Shall I generate **`07_Admin_Dashboard_Architecture.md`** to define how the visual builder tool operates?
+The visual builder and management control plane is defined in **`19_Admin_Dashboard_Blueprint.md`**.

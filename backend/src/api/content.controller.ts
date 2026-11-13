@@ -3,17 +3,19 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ContentService } from '../logic/content.service';
 import { Express, Response as ExpressResponse } from 'express';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../common/decorators/roles.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { basename } from 'path';
 import { Inject } from '@nestjs/common';
 import { STORAGE_ADAPTER, IStorageAdapter } from '../logic/storage/storage.interface';
+
+import { IContentService } from '../core/contracts/content-service.contract';
 
 @Public()
 @Controller('media')
 export class MediaController {
   constructor(
-    private readonly contentService: ContentService,
+    private readonly contentService: IContentService,
     @Inject(STORAGE_ADAPTER) private readonly storageAdapter: IStorageAdapter
   ) {}
 
@@ -54,7 +56,7 @@ export class MediaController {
 @UseGuards(JwtAuthGuard)
 @Controller('v1/admin/content')
 export class ContentController {
-  constructor(private readonly contentService: ContentService) {}
+  constructor(private readonly contentService: IContentService) {}
 
   @Get()
   findAll(@Req() req) {

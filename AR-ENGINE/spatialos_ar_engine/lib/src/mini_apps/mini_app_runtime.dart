@@ -1,20 +1,19 @@
 import 'dart:async';
 import 'contracts/i_mini_app_runtime.dart';
 import 'contracts/i_mini_app_api.dart';
-import 'models/mini_app_manifest.dart';
 import 'mini_app_api.dart';
 import '../interaction/contracts/i_interaction_system.dart';
 import '../core/contracts/i_event_bus.dart';
 import '../objects/models/i_spatial_node_data.dart';
 
 class MiniAppRuntime implements IMiniAppRuntime {
-  final IEventBus _eventBus;
+  final IEventBus eventBus;
   final IInteractionSystem _interactionSystem;
   
   final Map<String, MiniAppAPI> _bridges = {};
   final Map<String, StreamController<MiniAppState>> _stateControllers = {};
 
-  MiniAppRuntime(this._eventBus, this._interactionSystem);
+  MiniAppRuntime(this.eventBus, this._interactionSystem);
 
   @override
   Stream<MiniAppState> onAppStateChanged(String appId) {

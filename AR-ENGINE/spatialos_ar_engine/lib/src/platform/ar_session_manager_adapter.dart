@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'package:ar_flutter_plugin_flutterflow/ar_flutter_plugin.dart';
-import 'package:ar_flutter_plugin_flutterflow/managers/ar_session_manager.dart';
+import 'package:ar_flutter_plugin/managers/ar_session_manager.dart';
 import '../device/contracts/i_camera_provider.dart';
 import '../spatial/contracts/i_world_tracker.dart';
 import '../spatial/models/spatial_pose.dart';
-import '../objects/models/transform_3d.dart';
 
 class ARSessionManagerAdapter implements ICameraProvider, IWorldTracker {
   ARSessionManager? _sessionManager;

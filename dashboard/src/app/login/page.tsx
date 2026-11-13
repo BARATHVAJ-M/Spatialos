@@ -1,44 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Lock, Mail, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
-import { apiFetch } from '../../lib/api';
+import { useAuth } from '../../hooks';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await apiFetch<any>('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.success && response.data.token) {
-        // Save token
-        localStorage.setItem('spatial_auth_token', response.data.token);
-        
-        // Also set a cookie so Next.js middleware can read it for URL bypass protection
-        document.cookie = `spatial_auth_token=${response.data.token}; path=/; max-age=28800; samesite=strict`;
-
-        router.push('/'); // Redirect to dashboard
-      }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during login.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    error,
+    loading,
+    showPassword,
+    setShowPassword,
+    handleLogin,
+  } = useAuth();
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -53,7 +29,7 @@ export default function LoginPage() {
           SpatialOS Admin
         </h2>
         <p className="mt-2 text-center text-sm text-indigo-500 dark:text-indigo-400 italic">
-          "changing real world into interface"
+          &quot;changing real world into interface&quot;
         </p>
       </div>
 
@@ -123,7 +99,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-slate-900 dark:text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 {loading ? (
                   <>

@@ -105,7 +105,7 @@ class CacheManagementCard extends ConsumerWidget {
                   style: const TextStyle(color: AppColors.primary, fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 loading: () => const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
-                error: (_, __) => const Text('Error loading size', style: TextStyle(color: Colors.redAccent, fontSize: 13)),
+                error: (_, _) => const Text('Error loading size', style: TextStyle(color: Colors.redAccent, fontSize: 13)),
               ),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(

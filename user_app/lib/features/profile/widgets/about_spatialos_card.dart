@@ -71,13 +71,13 @@ class AboutSpatialOsCard extends StatelessWidget {
           
           _buildInfoRow('Version', '1.0.0'),
           _buildInfoRow('Build', 'Prototype 1'),
-          _buildInfoRow('Developer', 'Team Unknown'),
+          _buildInfoRow('Developer', 'PAANDA GROUP'),
           
           const SizedBox(height: 16),
           const Divider(color: Colors.white10, height: 1),
           const SizedBox(height: 16),
 
-          _buildLinkRow('Email', 'paanda.group@gmail.com', () => _launchUrl('mailto:paanda.group@gmail.com')),
+          _buildLinkRow('Email', 'spatialos.official@gmail.com', () => _launchUrl('mailto:spatialos.official@gmail.com')),
           _buildLinkRow('GitHub Repository', 'View Source', () => _launchUrl('https://github.com')),
           _buildLinkRow('License', 'Copyright © PAANDA', () => _showLicenseDialog(context)),
         ],

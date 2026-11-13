@@ -1,5 +1,4 @@
 import '../../objects/models/i_spatial_node_data.dart';
-import '../../spatial/contracts/i_world_tracker.dart';
 import '../../objects/models/transform_3d.dart';
 
 /// Defines an event when the Scene Graph changes.

@@ -7,6 +7,9 @@ import '../../features/profile/screens/profile_me_screen.dart';
 import '../../features/profile/screens/profile_settings_screen.dart';
 import '../../features/profile/screens/profile_downloads_screen.dart';
 import '../../features/profile/screens/profile_about_screen.dart';
+import '../../features/auth/screens/verification_pending_screen.dart';
+import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/reset_password_screen.dart';
 
 /// Centralized GoRouter navigation router for SpatialOS User App.
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -16,6 +19,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/verification-pending',
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return VerificationPendingScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return ResetPasswordScreen(email: email);
+        },
       ),
       GoRoute(
         path: '/home',

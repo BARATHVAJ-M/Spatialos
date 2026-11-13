@@ -2,6 +2,8 @@ import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logge
 import { Response } from 'express';
 import { Prisma } from '@prisma/client';
 
+import { AppError } from '../../core/errors/app-error';
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
@@ -13,8 +15,26 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error occurred';
     let errorCode = 'SYS_001';
+    let layer: string | undefined = undefined;
 
-    if (exception instanceof HttpException) {
+    if (exception instanceof AppError) {
+      layer = exception.layer;
+      errorCode = exception.code;
+      message = exception.message;
+      this.logger.error(`[${exception.layer} ERROR at ${exception.sourceFile || 'unknown'}] (${exception.code}): ${exception.message}`);
+
+      if (exception.code.includes('NOT_FOUND')) {
+        status = HttpStatus.NOT_FOUND;
+      } else if (exception.code.includes('UNAUTHORIZED') || exception.code.includes('TOKEN')) {
+        status = HttpStatus.UNAUTHORIZED;
+      } else if (exception.code.includes('FORBIDDEN') || exception.code.includes('PERMISSION')) {
+        status = HttpStatus.FORBIDDEN;
+      } else if (exception.layer === 'DOMAIN' || exception.code.includes('VALIDATION') || exception.code.includes('INVALID')) {
+        status = HttpStatus.BAD_REQUEST;
+      } else {
+        status = HttpStatus.INTERNAL_SERVER_ERROR;
+      }
+    } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null && 'message' in exceptionResponse) {
@@ -29,6 +49,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       status = HttpStatus.BAD_REQUEST;
       message = 'Database operation failed due to invalid constraints or relations.';
       errorCode = 'DB_ERROR';
+      layer = 'DATA_ACCESS';
     } else if (exception instanceof Error) {
       this.logger.error(`[AUDIT EXCEPTION LOG] Unhandled internal error: ${exception.message}`, exception.stack);
       // Strict rule: Never leak raw internal SQL, Prisma, or filesystem diagnostics to client responses
@@ -51,6 +72,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       success: false,
       message,
       errorCode,
+      ...(layer ? { layer } : {}),
       timestamp: new Date().toISOString(),
     });
   }

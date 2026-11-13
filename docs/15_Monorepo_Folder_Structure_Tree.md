@@ -1,130 +1,102 @@
-# SpatialOS Implementation Specification: Monorepo Folder Structure Tree
+# SpatialOS Implementation Specification: Repository Folder Structure Tree
 
-**Document ID:** 15_Monorepo_Folder_Structure_Tree
-**Target Audience:** All Software Engineers
+**Document ID:** 15_Monorepo_Folder_Structure_Tree  
+**Target Audience:** All Software Engineers  
 **Objective:** Provide an exhaustive, strict top-to-bottom directory map of the SpatialOS codebase. This guarantees that every new developer knows *exactly* where a file belongs without guessing.
 
 ---
 
-## The Master Tree
+## The Master Repository Tree
 
 ```text
-spatialos-monorepo/
+APP-1/
 │
-├── .github/
-│   └── workflows/              # CI/CD deployment scripts
-│       ├── build.yml           
-│       └── deploy-prod.yml     
+├── backend/                             # NestJS Backend API & Prisma Database
+│   ├── prisma/
+│   │   ├── schema.prisma                # Database Models & Relational Schema
+│   │   └── seed.ts                      # Database Seeder (Default Org, Admins, Services)
+│   ├── src/
+│   │   ├── api/                         # NestJS HTTP Controllers (REST Endpoints)
+│   │   │   ├── auth.controller.ts       # Authentication & JWT Issuance
+│   │   │   ├── places.controller.ts     # Physical Locations CRUD & QR Resolution
+│   │   │   ├── experiences.controller.ts# AR Experiences, Versions & Scene Graph
+│   │   │   ├── services.controller.ts   # Micro-App Definitions & Instances
+│   │   │   ├── content.controller.ts    # Media & Asset Upload API
+│   │   │   └── overview.controller.ts   # System Health & Dashboard Metrics
+│   │   ├── logic/                       # Core Business Logic Services
+│   │   │   ├── auth.service.ts
+│   │   │   ├── places.service.ts
+│   │   │   ├── experiences.service.ts
+│   │   │   └── services.service.ts
+│   │   ├── core/                        # Global Contracts, Guards, Interceptors & Adapters
+│   │   │   ├── guards/                  # JwtAuthGuard, RolesGuard
+│   │   │   ├── adapters/                # Storage Adapters (LocalDiskAdapter, S3)
+│   │   │   └── contracts/               # Service interfaces & data contracts
+│   │   ├── database/                    # PrismaModule & Database connection
+│   │   ├── main.ts                      # Server bootstrap, CORS, and pipes
+│   │   └── app.module.ts                # Root DI module
+│   └── test/                            # E2E integration test suites
 │
-├── packages/                   # Shared libraries across the monorepo
-│   │
-│   ├── database/               # The central source of truth for the DB
-│   │   ├── prisma/
-│   │   │   ├── schema.prisma   # From Doc 02
-│   │   │   └── seed.ts         # From Doc 14
-│   │   ├── package.json
-│   │   └── src/index.ts        # Exports the generated Prisma Client
-│   │
-│   ├── types/                  # Strict TypeScript Interfaces
-│   │   ├── package.json
-│   │   ├── src/
-│   │   │   ├── scene-graph.ts  # From Doc 03 (SceneGraphPayload, Transform3D)
-│   │   │   ├── components.ts   # UIElement definitions (VSTACK, BUTTON)
-│   │   │   ├── actions.ts      # ActionExecutionRequest definitions
-│   │   │   └── index.ts        # Central export
-│   │
-│   ├── ui-kit/                 # Shared React components for the Admin Dashboard
-│   │   ├── src/
-│   │   │   ├── Button.tsx
-│   │   │   └── Modal.tsx
-│   │
-│   └── tsconfig/               # Shared TypeScript configurations
-│       ├── base.json
-│       ├── nextjs.json
-│       └── nestjs.json
+├── dashboard/                           # Next.js 16 (Turbopack) Admin Web Dashboard
+│   ├── public/                          # Brand assets & static files
+│   └── src/
+│       ├── app/                         # Next.js App Router Pages
+│       │   ├── page.tsx                 # Dashboard Overview & System Metrics
+│       │   ├── login/page.tsx           # Admin Authentication Screen
+│       │   ├── places/                  # Physical Places Management & QR Deep Links
+│       │   ├── experiences/             # AR Experiences Visual Canvas & Publishing
+│       │   ├── services/                # Micro-App Configuration & Instance Editors
+│       │   ├── content/                 # Asset Library & Media Uploader
+│       │   ├── users/                   # Role & Team Management
+│       │   ├── publishing/              # Multi-version Deployment & Rollback
+│       │   ├── monitoring/              # System Health & Error Diagnostics
+│       │   └── settings/                # Tenant & Profile Settings
+│       ├── components/                  # Reusable UI Components & Dialogs
+│       │   ├── services/                # Micro-App Custom Editors (NoticeBoard, etc.)
+│       │   ├── CanvasArea.tsx           # 2D/3D Spatial Canvas
+│       │   ├── Sidebar.tsx              # OLED Dark Mode App Shell Navigation
+│       │   └── TopBar.tsx               # Omnibar Search & Notification Drawer
+│       ├── core/                        # HTTP Client, Auth Provider, Data Interfaces
+│       └── tests/                       # Automated Jest test suites
 │
-├── apps/                       # Executable applications
-│   │
-│   ├── backend-api/            # The NestJS Node API Container
-│   │   ├── Dockerfile          # From Doc 09
-│   │   ├── .env                # From Doc 10
-│   │   ├── package.json
-│   │   └── src/
-│   │       ├── main.ts         # App bootstrap & Swagger setup
-│   │       ├── app.module.ts
-│   │       │
-│   │       ├── core/           # Guards and global interceptors
-│   │       │   ├── auth.guard.ts
-│   │       │   └── error.interceptor.ts
-│   │       │
-│   │       └── modules/        # The Business Logic Domains
-│   │           ├── compiler/   # From Doc 04 (Compiles DB rows -> JSON)
-│   │           │   ├── compiler.controller.ts
-│   │           │   ├── compiler.service.ts
-│   │           │   └── compiler.module.ts
-│   │           │
-│   │           ├── actions/    # From Doc 05 (The Action Broker)
-│   │           │   ├── actions.controller.ts
-│   │           │   ├── action-broker.service.ts
-│   │           │   └── actions.module.ts
-│   │           │
-│   │           ├── gateway/    # From Doc 11 (Real-Time WebSockets)
-│   │           │   ├── spatial.gateway.ts
-│   │           │   └── gateway.module.ts
-│   │           │
-│   │           ├── admin/      # From Doc 12 & 13 (Standard CRUD & Assets)
-│   │           │   ├── places.controller.ts
-│   │           │   ├── experiences.controller.ts
-│   │           │   └── assets.controller.ts
-│   │           │
-│   │           └── prisma/     # Injects the DB connection globally
-│   │               └── prisma.service.ts
-│   │
-│   ├── admin-dashboard/        # The Next.js React Web App
-│   │   ├── Dockerfile
-│   │   ├── package.json
-│   │   ├── tailwind.config.ts
-│   │   └── src/
-│   │       ├── app/            # Next.js App Router Pages
-│   │       │   ├── layout.tsx
-│   │       │   ├── (auth)/     # Login forms
-│   │       │   └── dashboard/
-│   │       │       ├── places/page.tsx
-│   │       │       ├── experiences/page.tsx
-│   │       │       └── editor/[id]/page.tsx # The visual WYSIWYG
-│   │       │
-│   │       ├── components/     # Local UI logic
-│   │       │   └── builder/    # From Doc 07 (Visual Editor components)
-│   │       │       ├── CanvasArea.tsx
-│   │       │       ├── NodeSidebar.tsx
-│   │       │       └── PropEditor.tsx
-│   │       │
-│   │       ├── store/          # Global Client State
-│   │       │   └── useBuilderStore.ts # Zustand draft nodes store
-│   │       │
-│   │       └── lib/
-│   │           └── api.ts      # Axios wrappers pointing to the NestJS API
-│   │
-│   └── ar-engine-wrapper/      # The Mobile AR Project (Swift/Kotlin/Unity)
-│       └── src/
-│           ├── SpatialVisionManager  # From Doc 06 (QR detection)
-│           ├── SceneParser           # From Doc 06 (Draws 3D/UI from JSON)
-│           ├── ServerDrivenUIBuilder # From Doc 06 (Renders generic UI components)
-│           ├── ActionEmitter         # From Doc 06 (Posts taps to backend)
-│           └── SpatialSocketClient   # From Doc 11 (Listens for live state changes)
+├── user_app/                            # Flutter Mobile Application
+│   ├── lib/
+│   │   ├── core/                        # Theme (AppColors), Routing, Constants
+│   │   ├── services/                    # ApiService, Dio HTTP Client, AR Resolver
+│   │   └── ui/                          # AR Camera Screen, Notice Board Overlays
+│   └── android/                         # Android native runner, Gradle & Permissions
 │
-├── package.json                # Root Turborepo manifest
-├── turbo.json                  # Turborepo task runner rules (build, dev, test)
-└── .gitignore
+├── AR-ENGINE/                           # Spatial AR Rendering & Math Engine
+│   └── spatialos_ar_engine/             # Coordinate math, 3D transform matrices, anchor tracking
+│
+├── docs/                                # Authoritative Architecture & Technical Runbooks
+│   ├── 00_Master_Blueprint.md           # Core philosophy & system architecture
+│   ├── 01_Core_Architecture_&_Stack.md  # Foundational tech stack decisions
+│   ├── 02_Database_Schema.md            # PostgreSQL + Prisma schema design
+│   ├── 03_API_Contracts.md              # Scene graph & action execution payloads
+│   ├── 04_The_Compiler_Engine.md        # JSON Scene Graph compilation rules
+│   ├── 05_The_Action_Broker.md          # Decoupled action handling & webhooks
+│   ├── 06_AR_Client_SDK_Integration.md  # Client AR SDK integration guide
+│   ├── 08_Security_&_Physical_Binding.md# QR cryptographic binding & anti-spoofing
+│   ├── 09_Infrastructure_&_Cloud_Deployment.md # VPS & Production deployment runbook
+│   ├── 10_Developer_Onboarding_&_Local_Setup.md # Local developer environment setup
+│   ├── 11_State_Synchronization_&_Realtime_AR.md # Live WebSocket & SSE synchronization
+│   ├── 12_Admin_CRUD_APIs.md            # Full Admin REST API documentation
+│   ├── 13_Asset_Upload_System.md        # File storage & multipart upload specifications
+│   ├── 14_Database_Seeding_&_Initialization.md # Seeding data & initialization sequences
+│   ├── 15_Monorepo_Folder_Structure_Tree.md # This repository layout specification
+│   ├── 16_Development_Workflow_&_Git_Rules.md # Git branching model & commit standards
+│   ├── 17_Auth_&_Analytics_APIs.md      # Authentication & spatial analytics APIs
+│   ├── 19_Admin_Dashboard_Blueprint.md  # Master 383-line Admin Dashboard UI/UX blueprint
+│   ├── 19_IAM_Policy_&_Generic_CRUD.md  # IAM, Multi-tenant isolation & ABAC/RBAC
+│   ├── 20_Event_Driven_Architecture_&_Audit.md # Audit logging & event queue
+│   ├── 21_Search_Reporting_&_Notifications.md # Omnibar search & notification bus
+│   ├── 22_Top_Bar_Features_Blueprint.md # Global top bar, breadcrumbs & status pills
+│   ├── SECURITY_AUDIT.md                # Master security audit & compliance report
+│   ├── SPATIALOS_PLATFORM_ARCHITECTURE.md # Platform purpose & high-level architecture
+│   ├── backend/                         # Comprehensive backend architecture & audit reports
+│   ├── dashboard/                       # Dashboard architecture, test plans & audit reports
+│   └── blueprints/                      # Active domain service blueprints
+│
+└── unwanted/                            # Deprecated legacy drafts and notes
 ```
-
----
-
-## Why this Structure is Law
-
-If a developer needs to fix a bug where a Button tap fails to log attendance, they know exactly where to go without searching:
-1. Mobile send logic? `apps/ar-engine-wrapper/src/ActionEmitter`
-2. Payload missing a field? `packages/types/src/actions.ts`
-3. Backend crash? `apps/backend-api/src/modules/actions/action-broker.service.ts`
-
-By strictly following this layout, the codebase can scale to millions of lines of code without becoming a tangled monolith.

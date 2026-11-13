@@ -110,19 +110,18 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   _buildMenuTile(
                     context,
-                    title: 'Settings',
-                    subtitle: 'All application settings',
-                    icon: Icons.settings_rounded,
-                    iconColor: AppColors.info,
-                    onTap: () => context.push('/profile/settings'),
-                  ),
-                  _buildMenuTile(
-                    context,
-                    title: 'Downloads',
-                    subtitle: 'Clear cache and manage storage',
-                    icon: Icons.folder_rounded,
-                    iconColor: AppColors.accent,
-                    onTap: () => context.push('/profile/downloads'),
+                    title: 'Clear Cache',
+                    subtitle: 'Free up storage space',
+                    icon: Icons.delete_sweep_rounded,
+                    iconColor: AppColors.error,
+                    onTap: () async {
+                      await ref.read(cacheProvider.notifier).clearCache();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Cache cleared successfully!')),
+                        );
+                      }
+                    },
                   ),
                   _buildMenuTile(
                     context,

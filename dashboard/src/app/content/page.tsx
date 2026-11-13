@@ -1,73 +1,28 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Search, Filter, Plus, FileText, Image as ImageIcon, Video, MoreVertical, X, UploadCloud, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
-import { apiFetch, BASE_URL } from '../../lib/api';
+import { Search, Plus, FileText, Image as ImageIcon, Video, X, UploadCloud, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useContentAssets } from '../../hooks';
+import { BASE_URL } from '../../core/http/http-client';
 
 export default function ContentPage() {
-  const [contents, setContents] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadStep, setUploadStep] = useState<'idle' | 'uploading' | 'completed' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  const fetchContents = async () => {
-    setIsLoading(true);
-    try {
-      const data = await apiFetch<any[]>('/content');
-      setContents(data || []);
-    } catch (error) {
-      console.error('Failed to fetch contents:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchContents();
-  }, []);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const startUpload = async () => {
-    if (!selectedFile) return;
-
-    setUploadStep('uploading');
-    setErrorMessage('');
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
-    try {
-      await apiFetch('/content/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      setUploadStep('completed');
-      fetchContents();
-    } catch (error: any) {
-      console.error('Upload failed:', error);
-      setErrorMessage(error.message || 'Upload failed');
-      setUploadStep('error');
-    }
-  };
-
-  const resetUpload = () => {
-    setShowUploadModal(false);
-    setUploadStep('idle');
-    setSelectedFile(null);
-    setErrorMessage('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
+  const {
+    contents,
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    showUploadModal,
+    setShowUploadModal,
+    uploadStep,
+    setUploadStep,
+    errorMessage,
+    selectedFile,
+    fileInputRef,
+    handleFileChange,
+    startUpload,
+    resetUpload,
+    deleteContent,
+    refresh,
+  } = useContentAssets();
 
   const bytesToMB = (bytes: number) => {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
@@ -81,13 +36,22 @@ export default function ContentPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Content Library</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Manage, preview, and upload assets to assign to spatial experiences</p>
         </div>
-        <button 
-          onClick={() => setShowUploadModal(true)}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-slate-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-        >
-          <Plus className="w-5 h-5" />
-          Add Content
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => refresh()}
+            className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:bg-slate-700 transition-colors"
+            title="Refresh Content"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <button 
+            onClick={() => setShowUploadModal(true)}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+          >
+            <Plus className="w-5 h-5" />
+            Add Content
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -98,6 +62,8 @@ export default function ContentPage() {
             <input 
               type="text" 
               placeholder="Search content library..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
             />
           </div>
@@ -118,18 +84,18 @@ export default function ContentPage() {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={5} className="p-12 text-center text-slate-500 dark:text-slate-400">
                     <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin mx-auto" />
                   </td>
                 </tr>
               ) : contents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 border-dashed">
+                  <td colSpan={5} className="p-12 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 border-dashed">
                     No content available.
                   </td>
                 </tr>
               ) : contents.map((content) => (
-                <tr key={content.id} className="hover:bg-slate-100 dark:bg-slate-700 transition-colors">
+                <tr key={content.id} className="hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
@@ -161,8 +127,7 @@ export default function ContentPage() {
                     <button 
                       onClick={async () => {
                         if (confirm('Are you sure you want to delete this asset?')) {
-                          await apiFetch(`/content/${content.id}`, { method: 'DELETE' });
-                          fetchContents();
+                          await deleteContent(content.id);
                         }
                       }}
                       className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-500/10 rounded-md transition-colors"
@@ -177,10 +142,10 @@ export default function ContentPage() {
         </div>
       </div>
 
-      {/* Upload Flow Dialog Backdrop / Layout */}
+      {/* Upload Flow Dialog */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-50 dark:bg-slate-900/40 backdrop-blur-sm" onClick={resetUpload} />
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={resetUpload} />
           
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg overflow-hidden relative z-10 animate-in zoom-in-95 duration-150">
             <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
@@ -219,7 +184,7 @@ export default function ContentPage() {
                   <button 
                     onClick={startUpload}
                     disabled={!selectedFile}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-slate-900 dark:text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-sm"
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-sm"
                   >
                     Upload File
                   </button>
@@ -256,7 +221,7 @@ export default function ContentPage() {
                   
                   <button 
                     onClick={resetUpload}
-                    className="mt-6 bg-slate-50 dark:bg-slate-900 hover:bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium px-6 py-2 rounded-lg text-sm transition-colors"
+                    className="mt-6 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-900 dark:text-white font-medium px-6 py-2 rounded-lg text-sm transition-colors"
                   >
                     Done
                   </button>

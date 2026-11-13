@@ -97,7 +97,7 @@ export function ComplaintBoxEditor({ instance, config, onConfigChange }: Complai
               {config.privacyMessage || 'SpatialOS does not track or store your details.'}
             </p>
           </div>
-          <button className="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-900 dark:text-white font-medium py-3 px-4 rounded-lg transition-colors" disabled>
+          <button className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-3 px-4 rounded-lg transition-colors" disabled>
             Submit Grievance
           </button>
         </div>

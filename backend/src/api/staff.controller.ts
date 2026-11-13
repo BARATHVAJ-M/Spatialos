@@ -11,13 +11,13 @@ export class StaffController {
 
   @Get()
   getStaffDirectory(@Req() req) {
-    const organizationId = req.user?.orgId || req.user?.organizationId || '123e4567-e89b-12d3-a456-426614174000';
+    const organizationId = req.user?.orgId || req.user?.organizationId || '00000000-0000-0000-0000-000000000000';
     return this.staffSyncService.getAllStaff(organizationId);
   }
 
   @Post('sync')
   async syncFromSheet(@Req() req) {
-    const organizationId = req.user?.orgId || req.user?.organizationId || '123e4567-e89b-12d3-a456-426614174000';
+    const organizationId = req.user?.orgId || req.user?.organizationId || '00000000-0000-0000-0000-000000000000';
     // Use the IT Staff Details CSV Export link based on the provided sheet ID
     const IT_STAFF_DETAILS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1O7K5XS_z3rxaKVP_REQQly2fwo8mB6wcGYy15Dp8_V0/export?format=csv';
     

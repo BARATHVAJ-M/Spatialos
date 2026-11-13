@@ -2,9 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:user_app/core/services/api_service.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
 import '../../core/theme/app_colors.dart';
 
 class ArVideoPlayerWidget extends StatefulWidget {

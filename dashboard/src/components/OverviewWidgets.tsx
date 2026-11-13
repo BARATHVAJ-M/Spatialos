@@ -85,7 +85,7 @@ export function QuickActions() {
   const ACTIONS = [
     { label: 'Create Place', icon: Plus, href: '/places/create', primary: true },
     { label: 'Create Experience', icon: Plus, href: '/experiences/create', primary: true },
-    { label: 'Add Content', icon: Upload, href: '/content/add' },
+    { label: 'Add Content', icon: Upload, href: '/content' },
     { label: 'Configure Service', icon: Settings2, href: '/services' },
     { label: 'Publish Changes', icon: Send, href: '/publishing', color: 'text-indigo-400 bg-indigo-50 hover:bg-indigo-100' },
   ];

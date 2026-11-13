@@ -39,19 +39,27 @@ dependencies:
   dio: ^5.11.0
   google_fonts: ^8.2.1
   mobile_scanner: ^7.4.0
-  permission_handler: ^11.3.1
+  permission_handler: ^11.0.0
   video_player: ^2.13.0
   uuid: ^4.6.0
   shared_preferences: ^2.5.5
   flutter_secure_storage: ^10.3.1
   url_launcher: ^6.3.2
   path_provider: ^2.1.6
+  flutter_cache_manager: ^3.3.1
+  isar: ^3.1.0
+  isar_flutter_libs: ^3.1.0
+  sentry_flutter: ^9.29.0
+  firebase_crashlytics: ^5.3.0
   vector_math: ^2.1.4
   spatialos_ar_engine:
     path: ../AR-ENGINE/spatialos_ar_engine
+  ar_flutter_plugin: ^0.7.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  build_runner: ^2.4.6
+  isar_generator: ^3.1.0+1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -60,7 +68,8 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
-  mockito: ^5.7.0
+  flutter_native_splash: ^2.4.0
+  mockito: ^5.4.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -109,3 +118,6 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/logo.png"
   min_sdk_version: 21
+
+dependency_overrides:
+  permission_handler: ^11.0.0

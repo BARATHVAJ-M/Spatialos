@@ -86,7 +86,7 @@ class SettingsCard extends ConsumerWidget {
       subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 13)),
       value: value,
       onChanged: onChanged,
-      activeColor: AppColors.primary,
+      activeThumbColor: AppColors.primary,
       activeTrackColor: AppColors.primary.withValues(alpha: 0.3),
       inactiveThumbColor: Colors.white54,
       inactiveTrackColor: Colors.white10,

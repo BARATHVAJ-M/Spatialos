@@ -1,126 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { 
-  Search, Plus, Filter, MoreVertical, MapPin, Download, X, 
-  Trash2, Edit3, Settings, Eye, CheckCircle2, AlertCircle, RefreshCw, Layers
+  Search, Plus, Filter, MapPin, X, 
+  Trash2, Edit3, Eye, CheckCircle2, AlertCircle, RefreshCw, Layers 
 } from 'lucide-react';
 import Link from 'next/link';
-
-import { apiFetch } from '../../lib/api';
-
-import { Place } from '../../types/api';
+import { usePlaces } from '../../hooks';
 
 export default function PlacesPage() {
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Search & Filtering State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'draft' | 'archived'>('all');
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedParent, setSelectedParent] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Modals & Drawers State
-  const [deletingPlace, setDeletingPlace] = useState<Place | null>(null);
-  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
-  const [editingPlace, setEditingPlace] = useState<Place | null>(null);
-
-  // Feedback Notification State
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  // Trigger temporary notification
-  const triggerNotification = (type: 'success' | 'error', text: string) => {
-    setNotification({ type, text });
-    setTimeout(() => setNotification(null), 3000);
-  };
-
-  const fetchPlaces = async () => {
-    setIsLoading(true);
-    try {
-      const data = await apiFetch<Place[]>('/places');
-      setPlaces(data);
-    } catch (err: any) {
-      triggerNotification('error', err.message || 'Failed to fetch places');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPlaces();
-  }, []);
-
-  const handleRefresh = () => {
-    fetchPlaces();
-    triggerNotification('success', 'Places list synchronized successfully.');
-  };
-
-  // Filter Logic
-  const filteredPlaces = places.filter((place) => {
-    const status = place.status || 'Active';
-    const type = place.type || 'Location';
-    const parent = place.parentId || '-';
-
-    // Tab Filter
-    if (activeTab !== 'all' && status.toLowerCase() !== activeTab) return false;
-    
-    // Type Filter
-    if (selectedType !== 'all' && type.toLowerCase() !== selectedType.toLowerCase()) return false;
-    
-    // Parent Filter
-    if (selectedParent !== 'all' && parent.toLowerCase() !== selectedParent.toLowerCase()) return false;
-    
-    // Text Search
-    if (searchQuery.trim() !== '') {
-      const query = searchQuery.toLowerCase();
-      return (
-        place.name.toLowerCase().includes(query) ||
-        (place.qrTargetId && place.qrTargetId.toLowerCase().includes(query)) ||
-        type.toLowerCase().includes(query)
-      );
-    }
-    
-    return true;
-  });
-
-  // Action Handlers
-  const handleSaveEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingPlace) return;
-
-    try {
-      await apiFetch(`/places/${editingPlace.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ name: editingPlace.name }),
-      });
-      setPlaces(prev => prev.map(p => p.id === editingPlace.id ? editingPlace : p));
-      setEditingPlace(null);
-      triggerNotification('success', `Place "${editingPlace.name}" updated successfully.`);
-    } catch (err: any) {
-      triggerNotification('error', err.message || 'Failed to update place');
-    }
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!deletingPlace) return;
-
-    if (deleteConfirmationInput.trim() !== deletingPlace.name) {
-      triggerNotification('error', 'Confirmation name does not match.');
-      return;
-    }
-
-    try {
-      await apiFetch(`/places/${deletingPlace.id}`, { method: 'DELETE' });
-      setPlaces(prev => prev.filter(p => p.id !== deletingPlace.id));
-      setDeletingPlace(null);
-      setDeleteConfirmationInput('');
-      triggerNotification('success', `Place "${deletingPlace.name}" deleted successfully.`);
-    } catch (err: any) {
-      triggerNotification('error', err.message || 'Failed to delete place');
-    }
-  };
+  const {
+    places,
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    activeTab,
+    setActiveTab,
+    selectedType,
+    setSelectedType,
+    selectedParent,
+    setSelectedParent,
+    showFilters,
+    setShowFilters,
+    deletingPlace,
+    setDeletingPlace,
+    deleteConfirmationInput,
+    setDeleteConfirmationInput,
+    editingPlace,
+    setEditingPlace,
+    notification,
+    handleRefresh,
+    handleSaveEdit,
+    handleDeleteConfirm,
+  } = usePlaces();
 
   return (
     <div className="p-8 max-w-7xl mx-auto relative min-h-full flex flex-col space-y-6">
@@ -153,7 +64,7 @@ export default function PlacesPage() {
           </button>
           <Link 
             href="/places/create" 
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-slate-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm text-sm"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm text-sm"
           >
             <Plus className="w-4 h-4" />
             Create Place
@@ -166,11 +77,11 @@ export default function PlacesPage() {
         {['all', 'active', 'draft', 'archived'].map((tab) => (
           <button 
             key={tab}
-            onClick={() => { setActiveTab(tab as any); }}
+            onClick={() => setActiveTab(tab as any)}
             className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors capitalize ${
               activeTab === tab 
                 ? 'border-indigo-500 text-indigo-400' 
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
             {tab === 'all' ? 'All Places' : `${tab} Places`}
@@ -198,7 +109,7 @@ export default function PlacesPage() {
             <button 
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm font-semibold transition-all ${
-                showFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-700'
+                showFilters ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-500 dark:text-indigo-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-700'
               }`}
             >
               <Filter className="w-4 h-4" /> Filter Options
@@ -259,15 +170,15 @@ export default function PlacesPage() {
                 </div>
               ))}
             </div>
-          ) : filteredPlaces.length === 0 ? (
+          ) : places.length === 0 ? (
             /* Empty State */
             <div className="p-16 flex flex-col items-center justify-center text-center">
-              <Layers className="w-12 h-12 text-slate-700 dark:text-slate-300 mb-4" />
+              <Layers className="w-12 h-12 text-slate-500 dark:text-slate-400 mb-4" />
               <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">No Places Found</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm">No locations match your search criteria. Try adjusting your query or filters.</p>
               <button 
                 onClick={() => { setSearchQuery(''); setSelectedType('all'); setSelectedParent('all'); }}
-                className="mt-4 text-xs font-bold text-indigo-400 hover:text-indigo-700 transition-colors"
+                className="mt-4 text-xs font-bold text-indigo-500 hover:text-indigo-600 transition-colors"
               >
                 Clear all filters
               </button>
@@ -288,15 +199,15 @@ export default function PlacesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                {filteredPlaces.map((place) => (
-                  <tr key={place.id} className="hover:bg-slate-100 dark:bg-slate-700 transition-colors">
+                {places.map((place) => (
+                  <tr key={place.id} className="hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
                           <MapPin className="w-4 h-4" />
                         </div>
                         <div>
-                          <Link href={`/places/${place.id}`} className="font-semibold text-slate-900 dark:text-white hover:text-indigo-600 transition-colors block">
+                          <Link href={`/places/${place.id}`} className="font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors block">
                             {place.name}
                           </Link>
                           <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{place.id}</span>
@@ -339,10 +250,10 @@ export default function PlacesPage() {
         </div>
       </div>
 
-      {/* Edit Place Side Drawer (Section 7 Edit Workflow) */}
+      {/* Edit Place Side Drawer */}
       {editingPlace && (
         <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
-          <div className="absolute inset-0 bg-slate-50 dark:bg-slate-900/40 backdrop-blur-sm" onClick={() => setEditingPlace(null)} />
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setEditingPlace(null)} />
           
           <form onSubmit={handleSaveEdit} className="relative w-full max-w-md bg-white dark:bg-slate-800 h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-200">
             <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
@@ -407,10 +318,10 @@ export default function PlacesPage() {
             </div>
 
             <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-end gap-3 shrink-0">
-              <button type="button" onClick={() => setEditingPlace(null)} className="px-4 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 transition-colors">
+              <button type="button" onClick={() => setEditingPlace(null)} className="px-4 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                 Cancel
               </button>
-              <button type="submit" className="px-5 py-2 text-sm font-medium text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-900 hover:bg-white dark:bg-slate-800 rounded-lg transition-colors shadow-sm">
+              <button type="submit" className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm">
                 Save Changes
               </button>
             </div>
@@ -418,10 +329,10 @@ export default function PlacesPage() {
         </div>
       )}
 
-      {/* Delete / Archive Confirmation Modal (Section 29 Confirmation workflow) */}
+      {/* Delete / Archive Confirmation Modal */}
       {deletingPlace && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-50 dark:bg-slate-900/40 backdrop-blur-sm" onClick={() => setDeletingPlace(null)} />
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setDeletingPlace(null)} />
           
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 w-full max-w-md overflow-hidden relative z-10 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="p-5 border-b border-slate-200 dark:border-slate-700">
@@ -450,7 +361,7 @@ export default function PlacesPage() {
               <button 
                 type="button" 
                 onClick={() => { setDeletingPlace(null); setDeleteConfirmationInput(''); }} 
-                className="px-4 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
               >
                 Cancel
               </button>
@@ -458,7 +369,7 @@ export default function PlacesPage() {
                 type="button" 
                 onClick={handleDeleteConfirm}
                 disabled={deleteConfirmationInput.trim() !== deletingPlace.name}
-                className="px-4 py-2 text-sm font-medium text-slate-900 dark:text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm disabled:bg-red-200 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Confirm Archive
               </button>
@@ -466,7 +377,6 @@ export default function PlacesPage() {
           </div>
         </div>
       )}
-
 
     </div>
   );

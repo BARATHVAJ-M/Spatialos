@@ -3,8 +3,8 @@ import { Request } from 'express';
 import { AuthService } from '../logic/auth.service';
 import { RegisterUserDto } from '../auth/dto/register-user.dto';
 import { LoginUserDto } from '../auth/dto/login-user.dto';
-import { Public } from '../auth/decorators/public.decorator';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../common/decorators/public.decorator';
+import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
 import { Throttle } from '@nestjs/throttler';
 
@@ -13,7 +13,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 reqs per 15 mins
+  @Throttle({ default: { limit: process.env.NODE_ENV === 'production' ? 5 : 1000, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: LoginUserDto, @Req() request: Request) {

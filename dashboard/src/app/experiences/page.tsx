@@ -2,31 +2,21 @@
 
 import { Search, Plus, Filter, Trash2, Box, QrCode, Download, X, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { apiFetch } from '../../lib/api';
-import { Experience } from '../../types/api';
+import { useExperiences } from '../../hooks';
 
 export default function ExperiencesPage() {
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedQrExp, setSelectedQrExp] = useState<any>(null);
-
-  const fetchExperiences = async () => {
-    setIsLoading(true);
-    try {
-      const data = await apiFetch<Experience[]>('/experiences');
-      setExperiences(data);
-    } catch (error) {
-      console.error('Failed to fetch experiences:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchExperiences();
-  }, []);
+  const {
+    experiences,
+    isLoading,
+    error,
+    searchQuery,
+    setSearchQuery,
+    selectedQrExp,
+    setSelectedQrExp,
+    deleteExperience,
+    refresh,
+  } = useExperiences();
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -35,14 +25,29 @@ export default function ExperiencesPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Experiences</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Define what the user sees/interacts with at specific physical places</p>
         </div>
-        <Link 
-          href="/experiences/create" 
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-slate-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-        >
-          <Plus className="w-5 h-5" />
-          Create Experience
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => refresh()}
+            className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-2 rounded-lg font-medium transition-colors"
+            title="Refresh Experiences"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          <Link 
+            href="/experiences/create" 
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+          >
+            <Plus className="w-5 h-5" />
+            Create Experience
+          </Link>
+        </div>
       </div>
+
+      {error && (
+        <div className="mb-4 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
 
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         {/* Toolbar */}
@@ -52,6 +57,8 @@ export default function ExperiencesPage() {
             <input 
               type="text" 
               placeholder="Search Experiences..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
             />
           </div>
@@ -93,13 +100,13 @@ export default function ExperiencesPage() {
                   </td>
                 </tr>
               ) : experiences.map((exp) => (
-                <tr key={exp.id} className="hover:bg-slate-100 dark:bg-slate-700 transition-colors group">
+                <tr key={exp.id} className="hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors group">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
                         <Box className="w-4 h-4" />
                       </div>
-                      <Link href={`/experiences/${exp.id}`} className="font-medium text-slate-900 dark:text-white hover:text-indigo-600 transition-colors">
+                      <Link href={`/experiences/${exp.id}`} className="font-medium text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                         {exp.name}
                       </Link>
                     </div>
@@ -136,12 +143,7 @@ export default function ExperiencesPage() {
                     <button 
                       onClick={async () => {
                         if (window.confirm(`Are you sure you want to permanently delete the experience "${exp.name}"? This action will destroy all attached services, content, and spatial nodes without any traces.`)) {
-                          try {
-                            await apiFetch(`/experiences/${exp.id}`, { method: 'DELETE' });
-                            setExperiences(prev => prev.filter(e => e.id !== exp.id));
-                          } catch (err) {
-                            alert('Failed to delete experience');
-                          }
+                          await deleteExperience(exp.id);
                         }
                       }}
                       className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-red-600 hover:bg-red-500/10 rounded-md transition-colors"
@@ -160,7 +162,7 @@ export default function ExperiencesPage() {
       {/* QR Code Viewer Modal */}
       {selectedQrExp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-50 dark:bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedQrExp(null)} />
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedQrExp(null)} />
           
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 w-full max-w-sm overflow-hidden relative z-10 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
@@ -210,7 +212,7 @@ export default function ExperiencesPage() {
                   }
                   setSelectedQrExp(null);
                 }}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-slate-900 dark:text-white font-semibold py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors shadow-sm"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors shadow-sm"
               >
                 <Download className="w-4 h-4" /> Download QR Code PNG
               </button>

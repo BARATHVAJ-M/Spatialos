@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,16 +7,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_colors.dart';
-import 'package:user_app/features/mini_apps/notice_board_mini_app.dart';
-import 'package:user_app/core/services/api_service.dart';
-import 'package:video_player/video_player.dart';
 import '../../../core/utils/toast_service.dart';
 import '../../../core/config/api_config.dart';
 import '../../../shared/models/ar_content_model.dart';
 import '../../../repositories/repository_providers.dart';
-import '../../../shared/widgets/ar_video_player_widget.dart';
 import '../../../shared/widgets/ar_object_manipulator.dart';
-import '../../mini_apps/coffee_mini_app.dart';
+import '../../../shared/widgets/ar_content_widget_factory.dart';
+import '../../../shared/widgets/custom_text_field.dart';
 import 'dart:async';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -33,15 +28,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _activeLocationId;
   List<ArContentModel> _wallContents = [];
   bool _permissionsGranted = kIsWeb;
-  bool _isScanningActive = false;
+  bool _isScanningActive = true;
   bool _isLoadingContent = false;
   Timer? _pollTimer;
 
   Offset? _liveQrAnchorCenter;
   double _liveQrScale = 1.0;
   double _liveQrAngle = 0.0;
-  double _liveQrPitch = 0.0;
-  double _liveQrYaw = 0.0;
   DateTime _lastQrSeenTime = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
@@ -51,6 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       detectionSpeed: DetectionSpeed.unrestricted,
       facing: CameraFacing.back,
       torchEnabled: false,
+      returnImage: true,
     );
     _requestPermissions();
   }
@@ -78,11 +72,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Future<void> _validateAndLockQr(String code) async {
-    if (_isLoadingContent || !_isScanningActive || _activeLocationId != null) return;
+  Future<void> _validateAndLockQr(String code, {bool isManual = false}) async {
+    if (_isLoadingContent || (!isManual && !_isScanningActive) || _activeLocationId != null) return;
     setState(() => _isLoadingContent = true);
 
-    if (!code.startsWith('LOC-') && !code.contains('/experience/')) {
+    String targetId = code.trim();
+    if (targetId.contains('/experience/')) {
+      targetId = targetId.split('/experience/').last;
+    } else if (targetId.startsWith('spatialos://')) {
+      targetId = targetId.replaceFirst('spatialos://', '');
+    }
+
+    if (!isManual && !targetId.startsWith('LOC-') && !code.contains('/experience/') && !code.startsWith('spatialos://') && targetId.length < 5) {
       if (mounted) {
         ToastService.showError(context, 'Unrecognized QR marker! Please scan an official SpatialOS QR code.');
       }
@@ -91,21 +92,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    // Extract experience ID if it's a URL
-    String targetId = code;
-    if (code.contains('/experience/')) {
-      targetId = code.split('/experience/').last;
-    }
-
     final repo = ref.read(arContentRepositoryProvider);
     try {
       final contents = await repo.getContentForLocation(targetId);
       if (mounted) {
+        // App-Side Memory Limit: Only render the 10 closest AR nodes to prevent overheating
+        contents.sort((a, b) {
+          final distA = math.pow(a.transform?.positionX ?? 0, 2) + math.pow(a.transform?.positionY ?? 0, 2);
+          final distB = math.pow(b.transform?.positionX ?? 0, 2) + math.pow(b.transform?.positionY ?? 0, 2);
+          return distA.compareTo(distB);
+        });
+        
+        final screen = MediaQuery.of(context).size;
         setState(() {
           _activeLocationId = targetId;
-          _wallContents = contents;
+          _wallContents = contents.take(10).toList();
           _isScanningActive = false;
           _isLoadingContent = false;
+          _lastQrSeenTime = DateTime.now();
+          _liveQrAnchorCenter ??= Offset(screen.width / 2, screen.height * 0.55);
         });
         
         _pollTimer?.cancel();
@@ -121,6 +126,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (mounted) {
         setState(() => _isLoadingContent = false);
         ToastService.showError(context, 'Failed to load AR environment: $e');
+        _showErrorDialog(targetId, e.toString());
       }
     }
   }
@@ -136,14 +142,196 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ToastService.show(context, 'Exited AR scene.');
   }
 
+  void _showErrorDialog(String targetId, String errorMessage) {
+    final serverUrl = ref.read(apiConfigProvider).serverUrl;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1F29),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.error, width: 1.2),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.wifi_off_rounded, color: AppColors.error, size: 24),
+            SizedBox(width: 10),
+            Text('AR Load Error', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Could not reach backend server to load AR scene.', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.black38,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Server URL: $serverUrl', style: const TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text('Scanned Anchor: $targetId', style: const TextStyle(color: Colors.white60, fontSize: 11)),
+                  const SizedBox(height: 4),
+                  Text('Details: $errorMessage', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text('• Check that your laptop and phone are on the same Wi-Fi.\n• Verify your laptop IP address matches the Server URL.', style: TextStyle(color: Colors.white60, fontSize: 11, height: 1.4)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Dismiss', style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            icon: const Icon(Icons.settings_ethernet, size: 16, color: Colors.white),
+            label: const Text('Change Server IP', style: TextStyle(color: Colors.white)),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showServerConfigDialog();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showServerConfigDialog() {
+    final config = ref.read(apiConfigProvider);
+    final controller = TextEditingController(text: config.serverUrl);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1F29),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppColors.glassBorder)),
+        title: const Row(
+          children: [
+            Icon(Icons.dns_rounded, color: AppColors.accent, size: 22),
+            SizedBox(width: 10),
+            Text('Server Connection', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter your Laptop Server Wi-Fi IP and Port 3001:', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            const SizedBox(height: 14),
+            CustomTextField(
+              controller: controller,
+              hintText: 'http://192.168.1.4:3001',
+              prefixIcon: Icons.lan_outlined,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2E2F3A),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('⚡ Wi-Fi Note:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                  SizedBox(height: 4),
+                  Text('Ensure your laptop server is running and your phone is connected to the same Wi-Fi network.', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white60))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            onPressed: () async {
+              final newUrl = controller.text.trim();
+              if (newUrl.isNotEmpty) {
+                await ref.read(apiConfigProvider.notifier).setServerUrl(newUrl);
+                setState(() {});
+                if (mounted) ToastService.showSuccess(context, 'Server updated to $newUrl');
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save & Reconnect', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showManualCodeDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1F29),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppColors.glassBorder)),
+        title: const Row(
+          children: [
+            Icon(Icons.qr_code_2_rounded, color: AppColors.accent, size: 22),
+            SizedBox(width: 10),
+            Text('Load AR Experience', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter Experience ID or Location Code (from Dashboard):', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            const SizedBox(height: 14),
+            CustomTextField(
+              controller: controller,
+              hintText: 'e.g. LOC-xxx or Experience UUID',
+              prefixIcon: Icons.tag_rounded,
+            ),
+            const SizedBox(height: 12),
+            const Text('💡 Tip: Use this to test your AR scene without pointing your camera at a physical printout.', style: TextStyle(color: Colors.white54, fontSize: 11)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white60))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            onPressed: () {
+              final text = controller.text.trim();
+              if (text.isNotEmpty) {
+                Navigator.pop(ctx);
+                _validateAndLockQr(text, isManual: true);
+              }
+            },
+            child: const Text('Load Scene', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _pollContent(String code) async {
     if (!mounted) return;
     try {
       final repo = ref.read(arContentRepositoryProvider);
       final contents = await repo.getContentForLocation(code);
       if (mounted) {
+        // App-Side Memory Limit: Only render the 10 closest AR nodes
+        contents.sort((a, b) {
+          final distA = math.pow(a.transform?.positionX ?? 0, 2) + math.pow(a.transform?.positionY ?? 0, 2);
+          final distB = math.pow(b.transform?.positionX ?? 0, 2) + math.pow(b.transform?.positionY ?? 0, 2);
+          return distA.compareTo(distB);
+        });
         setState(() {
-          _wallContents = contents;
+          _wallContents = contents.take(10).toList();
         });
       }
     } catch (e) {
@@ -215,33 +403,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     _validateAndLockQr(barcode.rawValue!);
                   }
                   
+                  // Keep AR objects alive even if corner detection fails or is unsupported on this platform
+                  String targetId = barcode.rawValue!;
+                  if (targetId.contains('/experience/')) {
+                    targetId = targetId.split('/experience/').last;
+                  }
+                  if (_activeLocationId == targetId || (_isScanningActive && _activeLocationId == null)) {
+                    if (mounted) {
+                      setState(() {
+                        _lastQrSeenTime = DateTime.now();
+                      });
+                    }
+                  }
+                  
                   // TRUE AR PLANE TRACKING: Map physical QR bounding points from camera stream sensor to logical screen display points
-                  if (barcode.corners != null && barcode.corners!.length == 4) {
-                    final screenSize = MediaQuery.of(context).size;
-                    final imgSize = capture.size;
-                    
+                  if (barcode.corners.length == 4) {
                     Offset mapPoint(Offset pt) {
-                      if (imgSize.width == 0 || imgSize.height == 0) return pt;
-                      final isOrientationMismatched = (screenSize.height > screenSize.width) != (imgSize.height > imgSize.width);
-                      final imgW = isOrientationMismatched ? imgSize.height : imgSize.width;
-                      final imgH = isOrientationMismatched ? imgSize.width : imgSize.height;
-                      
-                      final scaleX = screenSize.width / imgW;
-                      final scaleY = screenSize.height / imgH;
-                      final ratio = math.max(scaleX, scaleY);
-                      
-                      final cropX = (imgW * ratio - screenSize.width) / 2.0;
-                      final cropY = (imgH * ratio - screenSize.height) / 2.0;
-                      
-                      double rawX = isOrientationMismatched ? pt.dy : pt.dx;
-                      double rawY = isOrientationMismatched ? pt.dx : pt.dy;
-                      return Offset(rawX * ratio - cropX, rawY * ratio - cropY);
+                      return pt;
                     }
 
-                    final p0 = mapPoint(barcode.corners![0]); // Top-left
-                    final p1 = mapPoint(barcode.corners![1]); // Top-right
-                    final p2 = mapPoint(barcode.corners![2]); // Bottom-right
-                    final p3 = mapPoint(barcode.corners![3]); // Bottom-left
+                    final p0 = mapPoint(barcode.corners[0]); // Top-left
+                    final p1 = mapPoint(barcode.corners[1]); // Top-right
+                    final p2 = mapPoint(barcode.corners[2]); // Bottom-right
+                    final p3 = mapPoint(barcode.corners[3]); // Bottom-left
                     
                     final center = Offset(
                       (p0.dx + p1.dx + p2.dx + p3.dx) / 4.0,
@@ -252,45 +436,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     final qrWidth = (p1 - p0).distance;
                     final qrHeight = (p3 - p0).distance;
                     final calculatedScale = ((qrWidth + qrHeight) / 280.0).clamp(0.25, 5.0);
-                    
-                    // 3D Spatial Tilt Estimation (Pitch & Yaw perspective foreshortening)
-                    final topW = (p1 - p0).distance;
-                    final botW = (p2 - p3).distance;
-                    final leftH = (p3 - p0).distance;
-                    final rightH = (p2 - p1).distance;
-                    final avgW = (topW + botW) / 2.0;
-                    final avgH = (leftH + rightH) / 2.0;
-                    final maxDim = math.max(avgW, avgH);
-
-                    // Yaw
-                    double calculatedYaw = 0.0;
-                    if (maxDim > 0) {
-                      final ratioW = (avgW / maxDim).clamp(0.01, 1.0);
-                      calculatedYaw = math.acos(ratioW);
-                      if (leftH < rightH) calculatedYaw = -calculatedYaw;
-                    }
-
-                    // Pitch
-                    double calculatedPitch = 0.0;
-                    if (maxDim > 0) {
-                      final ratioH = (avgH / maxDim).clamp(0.01, 1.0);
-                      calculatedPitch = math.acos(ratioH);
-                      if (topW < botW) calculatedPitch = -calculatedPitch;
-                    }
-
-                    // Real-world surface orientation angle (roll)
-                    final calculatedAngle = math.atan2(p1.dy - p0.dy, p1.dx - p0.dx);
 
                     if (mounted) {
                       setState(() {
-                        _lastQrSeenTime = DateTime.now();
+                        // _lastQrSeenTime is already updated above
                         _liveQrAnchorCenter = _liveQrAnchorCenter == null 
                             ? center 
                             : Offset.lerp(_liveQrAnchorCenter!, center, 0.85);
                         _liveQrScale = (_liveQrScale * 0.15) + (calculatedScale * 0.85);
                         _liveQrAngle = 0.0; // Keep stable
-                        _liveQrPitch = 0.0;
-                        _liveQrYaw = 0.0;
                       });
                     }
                   }
@@ -334,17 +488,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // 2. Interactive Pinned AR Objects overlay
           if (isScanned)
             ..._wallContents.map((item) {
-              final isQrActiveInView = true;
+              final timeSinceLastSeen = DateTime.now().difference(_lastQrSeenTime).inMilliseconds;
+              final double fallbackWeight = (timeSinceLastSeen - 500).clamp(0, 1000) / 1000.0; 
 
-              final anchorX = _liveQrAnchorCenter?.dx ?? (size.width / 2);
-              final anchorY = _liveQrAnchorCenter?.dy ?? (size.height * 0.55);
-              final anchorScale = _liveQrAnchorCenter != null ? _liveQrScale : 1.0;
+              final defaultCenterX = size.width / 2;
+              final defaultCenterY = size.height * 0.55;
 
-              final storedX = item.transform?.positionX ?? -160.0;
-              final storedY = item.transform?.positionY ?? -280.0;
+              final rawAnchorX = _liveQrAnchorCenter?.dx ?? defaultCenterX;
+              final rawAnchorY = _liveQrAnchorCenter?.dy ?? defaultCenterY;
 
-              final dx = storedX * anchorScale;
-              final dy = storedY * anchorScale;
+              final anchorX = rawAnchorX + (defaultCenterX - rawAnchorX) * fallbackWeight;
+              final anchorY = rawAnchorY + (defaultCenterY - rawAnchorY) * fallbackWeight;
+
+              final rawAnchorScale = _liveQrAnchorCenter != null ? _liveQrScale : 1.0;
+              final anchorScale = rawAnchorScale + (1.0 - rawAnchorScale) * fallbackWeight;
+
+              final storedX = item.transform?.positionX ?? 0.0;
+              final storedY = -(item.transform?.positionY ?? 0.0);
+
+              final dx = storedX * 80.0 * anchorScale;
+              final dy = storedY * 80.0 * anchorScale;
               final sinA = math.sin(_liveQrAngle);
               final cosA = math.cos(_liveQrAngle);
               
@@ -356,6 +519,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ..rotateZ(_liveQrAngle);
 
               return Positioned(
+                key: ValueKey(item.id),
                 top: curY,
                 left: curX,
                 child: AnimatedOpacity(
@@ -363,12 +527,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   duration: const Duration(milliseconds: 200),
                   child: IgnorePointer(
                     ignoring: false, // Videos and MiniApps need tap
-                    child: Transform(
-                      transform: matrix3d,
-                      alignment: Alignment.center,
-                      child: ArObjectManipulator(
-                        item: item,
-                        child: _buildContentWidget(item),
+                    child: FractionalTranslation(
+                      translation: const Offset(-0.5, -0.5),
+                      child: OverflowBox(
+                        maxWidth: double.infinity,
+                        maxHeight: double.infinity,
+                        child: Transform(
+                          transform: matrix3d,
+                          alignment: Alignment.center,
+                          child: ArObjectManipulator(
+                            item: item,
+                            child: ArContentWidgetFactory(item: item),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -380,20 +551,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             if (isScanned)
               ..._wallContents.where((item) => item.contentType == ArContentType.plane && item.children != null).expand((plane) {
                 return plane.children!.map((child) {
-                  final anchorX = _liveQrAnchorCenter?.dx ?? (size.width / 2);
-                  final anchorY = _liveQrAnchorCenter?.dy ?? (size.height * 0.55);
-                  final anchorScale = _liveQrAnchorCenter != null ? _liveQrScale : 1.0;
+                  final timeSinceLastSeen = DateTime.now().difference(_lastQrSeenTime).inMilliseconds;
+                  final double fallbackWeight = (timeSinceLastSeen - 500).clamp(0, 1000) / 1000.0; 
+                  
+                  final defaultCenterX = size.width / 2;
+                  final defaultCenterY = size.height * 0.55;
+
+                  final rawAnchorX = _liveQrAnchorCenter?.dx ?? defaultCenterX;
+                  final rawAnchorY = _liveQrAnchorCenter?.dy ?? defaultCenterY;
+
+                  final anchorX = rawAnchorX + (defaultCenterX - rawAnchorX) * fallbackWeight;
+                  final anchorY = rawAnchorY + (defaultCenterY - rawAnchorY) * fallbackWeight;
+
+                  final rawAnchorScale = _liveQrAnchorCenter != null ? _liveQrScale : 1.0;
+                  final anchorScale = rawAnchorScale + (1.0 - rawAnchorScale) * fallbackWeight;
 
                   // Plane coordinates relative to anchor
                   final planeX = plane.transform?.positionX ?? 0.0;
-                  final planeY = plane.transform?.positionY ?? 0.0;
+                  final planeY = -(plane.transform?.positionY ?? 0.0);
 
                   // Child coordinates relative to plane
                   final childX = child.transform?.positionX ?? 0.0;
-                  final childY = child.transform?.positionY ?? 0.0;
+                  final childY = -(child.transform?.positionY ?? 0.0);
 
-                  final dx = (planeX + childX) * anchorScale;
-                  final dy = (planeY + childY) * anchorScale;
+                  final dx = (planeX + childX) * 80.0 * anchorScale;
+                  final dy = (planeY + childY) * 80.0 * anchorScale;
 
                   final sinA = math.sin(_liveQrAngle);
                   final cosA = math.cos(_liveQrAngle);
@@ -413,12 +595,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       duration: const Duration(milliseconds: 200),
                       child: IgnorePointer(
                         ignoring: false,
-                        child: Transform(
-                          transform: matrix3d,
-                          alignment: Alignment.center,
-                          child: ArObjectManipulator(
-                            item: child,
-                            child: _buildContentWidget(child),
+                        child: FractionalTranslation(
+                          translation: const Offset(-0.5, -0.5),
+                          child: OverflowBox(
+                            maxWidth: double.infinity,
+                            maxHeight: double.infinity,
+                            child: Transform(
+                              transform: matrix3d,
+                              alignment: Alignment.center,
+                              child: ArObjectManipulator(
+                                item: child,
+                                child: ArContentWidgetFactory(item: child),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -438,10 +627,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     isScanned ? _activeLocationId! : 'SpatialOS',
                     style: GoogleFonts.nunito(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 0.5),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.account_circle_outlined, size: 30, color: Colors.white),
-                    tooltip: 'Profile Hub',
-                    onPressed: () => context.push('/profile'),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.qr_code_2_outlined, size: 24, color: Colors.white70),
+                        tooltip: 'Enter Experience Code',
+                        onPressed: _showManualCodeDialog,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.dns_outlined, size: 24, color: AppColors.accent),
+                        tooltip: 'Server Connection',
+                        onPressed: _showServerConfigDialog,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.account_circle_outlined, size: 28, color: Colors.white),
+                        tooltip: 'Profile Hub',
+                        onPressed: () => context.push('/profile'),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -517,131 +721,5 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildContentWidget(ArContentModel item) {
-    if (item.contentType == ArContentType.text && item.textContent != null) {
-      final text = item.textContent!;
-      return Container(
-        width: 320,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: text.parsedBackgroundColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white24, width: 1.5),
-          boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 18, offset: Offset(0, 8))],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(text.title, style: TextStyle(color: text.parsedTextColor, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: text.fontFamily)),
-            if (text.paragraph.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(text.paragraph, style: TextStyle(color: text.parsedTextColor.withValues(alpha: 0.85), fontSize: 14, fontFamily: text.fontFamily)),
-            ]
-          ],
-        ),
-      );
-    } else if (item.mediaFile != null) {
-      var rawPath = item.mediaFile!.filePath;
-      if (rawPath.startsWith('/storage/')) {
-        rawPath = '${ref.read(apiConfigProvider).serverUrl.replaceFirst(RegExp(r'/$'), '')}$rawPath';
-      }
-      final isValidUrl = rawPath.startsWith('http://') || rawPath.startsWith('https://') || rawPath.startsWith('blob:') || rawPath.startsWith('data:');
-      final isLocalFile = !isValidUrl && !kIsWeb;
-      final isVideo = item.contentType == ArContentType.video || item.mediaFile!.mimeType.toLowerCase().contains('video');
-
-      if (isVideo) {
-        return Container(
-          width: 320,
-          height: 240,
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white24, width: 1.5),
-            boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 18, offset: Offset(0, 8))],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: ArVideoPlayerWidget(key: ValueKey(rawPath), videoUrl: rawPath, isLocalFile: isLocalFile),
-          ),
-        );
-      }
-
-      return Container(
-        constraints: const BoxConstraints(maxWidth: 320, maxHeight: 380),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0F172A),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white24, width: 2),
-          boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 20, offset: Offset(0, 10))],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: isValidUrl
-              ? Image.network(
-                  rawPath,
-                  key: ValueKey(rawPath),
-                  headers: ApiService.syncToken != null ? {'Authorization': 'Bearer ${ApiService.syncToken}'} : null,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    padding: const EdgeInsets.all(12),
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.broken_image_rounded, size: 40, color: AppColors.warning),
-                        const SizedBox(height: 6),
-                        Text('Image path not reachable:\n${rawPath.split('/').last}', textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                )
-              : (isLocalFile
-                  ? Image.file(
-                      File(item.mediaFile!.filePath),
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 40, color: Colors.orange)),
-                    )
-                  : const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_photo_alternate_rounded, size: 48, color: AppColors.accent),
-                          SizedBox(height: 8),
-                          Text('Offline Media', style: TextStyle(color: Colors.white, fontSize: 12)),
-                        ],
-                      ),
-                    )),
-        ),
-      );
-    } else if (item.contentType == ArContentType.plane) {
-      final width = item.planeContent?.width ?? 1.0;
-      final height = item.planeContent?.height ?? 1.0;
-      return Container(
-        width: 300 * width,
-        height: 300 * height,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          border: Border.all(color: Colors.white70, width: 2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      );
-    } else if (item.contentType == ArContentType.miniapp) {
-      if (item.miniAppContent?.appId == 'COFFEE_MINI_APP') {
-        return const CoffeeMiniApp();
-      } else if (item.miniAppContent?.appId == 'NOTICE_BOARD') {
-        return NoticeBoardMiniApp(state: item.miniAppContent?.state);
-      }
-      return Container(
-        width: 200,
-        height: 200,
-        color: Colors.red.withOpacity(0.5),
-        child: Center(child: Text('Unknown MiniApp ${item.miniAppContent?.appId}', style: const TextStyle(color: Colors.white))),
-      );
-    }
-
-    return const SizedBox.shrink();
   }
 }

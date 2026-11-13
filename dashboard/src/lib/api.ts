@@ -1,45 +1,36 @@
-// Generic API Client
+// Backwards-compatible API adapter delegating to the unified Layer 4 HttpClient
+import { httpClient, BASE_URL } from '../core/http/http-client';
 
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
-const ORG_ID = '00000000-0000-0000-0000-000000000000'; // Default org from seed
+export { BASE_URL };
 
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const fullEndpoint = endpoint.startsWith('/auth') ? endpoint : `/v1/admin${endpoint}`;
-  const url = `${BASE_URL}${fullEndpoint}`;
+  const method = (options.method || 'GET').toUpperCase();
   
-  const headers = new Headers(options.headers);
-  if (!(options.body instanceof FormData)) {
-    headers.set('Content-Type', 'application/json');
-  }
-  
-  // Attach JWT token if available in the browser
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('spatial_auth_token');
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
+  let result;
+  if (method === 'GET') {
+    result = await httpClient.get<T>(endpoint, options);
+  } else if (method === 'POST') {
+    if (options.body instanceof FormData) {
+      result = await httpClient.upload<T>(endpoint, options.body, options);
+    } else {
+      const parsedBody = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
+      result = await httpClient.post<T>(endpoint, parsedBody, options);
     }
-  }
-  
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    if (response.status === 401 && typeof window !== 'undefined' && window.location.pathname !== '/login') {
-      localStorage.removeItem('spatial_auth_token');
-      document.cookie = 'spatial_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      window.location.href = '/login';
-    }
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || `API request failed: ${response.statusText}`);
+  } else if (method === 'PUT') {
+    const parsedBody = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
+    result = await httpClient.put<T>(endpoint, parsedBody, options);
+  } else if (method === 'PATCH') {
+    const parsedBody = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
+    result = await httpClient.patch<T>(endpoint, parsedBody, options);
+  } else if (method === 'DELETE') {
+    result = await httpClient.delete<T>(endpoint, options);
+  } else {
+    result = await httpClient.get<T>(endpoint, options);
   }
 
-  // Some endpoints might return empty (e.g. DELETE)
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return response.json();
+  if (!result.ok) {
+    throw new Error(result.error.message);
   }
-  
-  return null as unknown as T;
+
+  return result.value as T;
 }

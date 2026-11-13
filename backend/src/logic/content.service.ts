@@ -1,35 +1,30 @@
 import { Injectable, BadRequestException, Logger, Inject } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
+import { IContentService } from '../core/contracts/content-service.contract';
+import { IContentRepository } from '../core/contracts/content-repository.contract';
 import * as fs from 'fs';
 import { STORAGE_ADAPTER, IStorageAdapter } from './storage/storage.interface';
+import { AppError } from '../core/errors/app-error';
 const FileType = require('file-type');
 
 @Injectable()
-export class ContentService {
+export class ContentService implements IContentService {
   private readonly logger = new Logger(ContentService.name);
 
   constructor(
-    private prisma: PrismaService,
-    @Inject(STORAGE_ADAPTER) private readonly storageAdapter: IStorageAdapter
+    private readonly repo: IContentRepository,
+    @Inject(STORAGE_ADAPTER) private readonly storageAdapter: IStorageAdapter,
   ) {}
 
   async findAll(organizationId: string) {
-    return this.prisma.contentAsset.findMany({
-      where: { organizationId },
-      orderBy: { id: 'desc' },
-    });
+    return this.repo.findAll(organizationId);
   }
 
   async findById(id: string) {
-    return this.prisma.contentAsset.findUnique({
-      where: { id }
-    });
+    return this.repo.findById(id);
   }
 
   async findByUrl(url: string) {
-    return this.prisma.contentAsset.findFirst({
-      where: { url }
-    });
+    return this.repo.findByUrl(url);
   }
 
   async uploadFile(organizationId: string, file: Express.Multer.File) {
@@ -59,9 +54,13 @@ export class ContentService {
       throw new BadRequestException('Only images and videos are allowed');
     }
 
-    // Deep MIME-type verification (prevent spoofing)
-    const chunk = await this.readFirstChunk(file.path);
-    const type = await FileType.fromBuffer(chunk);
+    // Verify magic bytes
+    let type;
+    try {
+      type = await FileType.fromFile(file.path);
+    } catch (err) {
+      this.logger.error(`Failed to inspect file magic bytes: ${file.path}`, err);
+    }
     
     if (!type || (!type.mime.startsWith('image/') && !type.mime.startsWith('video/'))) {
       this.logger.warn(`Spoofed file detected and rejected. Original name: ${file.originalname}, Real mime: ${type?.mime}`);
@@ -70,35 +69,30 @@ export class ContentService {
     }
 
     // Save file via Storage Adapter
-    const savedUrl = await this.storageAdapter.saveFile(file, file.filename);
+    await this.storageAdapter.saveFile(file, file.filename);
 
     // Save to ContentAsset DB
     const id = require('crypto').randomUUID();
-    // Generate a secure cryptographic string for the public URL
     const publicHash = require('crypto').randomBytes(32).toString('hex');
-    return this.prisma.contentAsset.create({
-      data: {
-        id,
-        organizationId,
-        assetType: isImage ? 'Image' : 'Video',
-        url: `/media/${publicHash}`, // Cryptographic proxy URL
-        metadata: {
-          filename: file.filename, // True physical filename hidden in metadata
-          originalName: file.originalname,
-          size: file.size,
-          mimetype: file.mimetype,
-        },
+    return this.repo.create({
+      id,
+      organizationId,
+      assetType: isImage ? 'Image' : 'Video',
+      url: `/media/${publicHash}`,
+      metadata: {
+        filename: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
       },
     });
   }
 
   async remove(organizationId: string, id: string) {
-    const asset = await this.prisma.contentAsset.findFirst({
-      where: { id, organizationId },
-    });
+    const asset = await this.repo.findById(id, organizationId);
 
     if (!asset) {
-      throw new BadRequestException('Asset not found');
+      throw AppError.domain('ASSET_NOT_FOUND', 'Asset not found', 'content.service.ts');
     }
 
     // Delete from storage
@@ -107,15 +101,11 @@ export class ContentService {
     await this.deleteFileSafely(filename);
 
     // Delete from DB
-    return this.prisma.contentAsset.delete({
-      where: { id },
-    });
+    return this.repo.delete(id);
   }
 
   async deleteByUrl(url: string) {
-    const asset = await this.prisma.contentAsset.findFirst({
-      where: { url },
-    });
+    const asset = await this.repo.findByUrl(url);
 
     if (!asset) {
       return null;
@@ -127,9 +117,7 @@ export class ContentService {
     await this.deleteFileSafely(filename);
 
     // Delete from DB
-    return this.prisma.contentAsset.delete({
-      where: { id: asset.id },
-    });
+    return this.repo.delete(asset.id);
   }
 
   private async deleteFileSafely(filename: string) {
@@ -141,32 +129,12 @@ export class ContentService {
   }
 
   private async deleteTempFileSafely(filePath: string) {
-    if (filePath && fs.existsSync(filePath)) {
-      try {
-        await fs.promises.unlink(filePath);
-      } catch (err: any) {
-        this.logger.error(`Failed to delete temp file: ${filePath}`, err.stack);
-      }
-    }
-  }
-
-  private async readFirstChunk(filePath: string): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      // For temp files handled by multer
+    try {
       if (fs.existsSync(filePath)) {
-        const stream = fs.createReadStream(filePath, { start: 0, end: 4100 });
-        let buffer = Buffer.alloc(0);
-        
-        stream.on('data', (chunk) => {
-          buffer = Buffer.concat([buffer, chunk as Buffer]);
-        });
-        
-        stream.on('end', () => resolve(buffer));
-        stream.on('error', (err) => reject(err));
-      } else {
-        // Fallback if file was deleted early
-        resolve(Buffer.alloc(0));
+        await fs.promises.unlink(filePath);
       }
-    });
+    } catch (err: any) {
+      this.logger.error(`Failed to cleanup temp file: ${filePath}`, err.stack);
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, UseGuards, Req, Body, Param, ConflictException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, UseGuards, Req, Body, Param, ConflictException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
 import { PrismaService } from '../database/prisma.service';
@@ -113,6 +113,10 @@ export class OverviewController {
     const orgId = req.user?.orgId || '00000000-0000-0000-0000-000000000000';
     const { name, email, password, role } = body;
     
+    if (!name || !email || !password) {
+      throw new BadRequestException('Name, email, and password are required');
+    }
+
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new ConflictException('User with this email already exists');

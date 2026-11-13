@@ -8,6 +8,7 @@ import '../../shared/models/media_file_model.dart';
 import '../../shared/models/text_content_model.dart';
 import '../../shared/models/plane_content_model.dart';
 import '../../shared/models/mini_app_content_model.dart';
+import '../../core/services/cache_service.dart';
 import 'ar_content_repository_interface.dart';
 
 class ApiArContentRepository implements IArContentRepository {
@@ -17,9 +18,21 @@ class ApiArContentRepository implements IArContentRepository {
 
   @override
   Future<List<ArContentModel>> getContentForLocation(String qrCodeOrId) async {
+    Map<String, dynamic>? res;
+    
     try {
-      final response = await _apiService.get('/placements/preview?qrCode=$qrCodeOrId');
-      final res = response.data;
+      final response = await _apiService.get('/placements/preview', queryParameters: {'qrCode': qrCodeOrId});
+      res = response.data;
+      if (res != null && res['success'] == true) {
+        await CacheService().saveScene(qrCodeOrId, res);
+      }
+    } on DioException catch (e) {
+      debugPrint('Network failed. Falling back to offline cache: $e');
+      res = await CacheService().getScene(qrCodeOrId);
+      if (res == null) rethrow; // No cache available
+    }
+
+    try {
       if (res != null && res['success'] == true && res['data']?['objects'] is List) {
         final rawList = res['data']['objects'] as List;
         return rawList.map((item) {
@@ -147,7 +160,6 @@ class ApiArContentRepository implements IArContentRepository {
     }
   }
 
-  @override
   Future<ArContentModel> createMediaContent({
     required String qrLocationId,
     required ArContentType type,
@@ -188,7 +200,6 @@ class ApiArContentRepository implements IArContentRepository {
     throw Exception('Failed to create media placement on server');
   }
 
-  @override
   Future<ArContentModel> createTextContent({
     required String qrLocationId,
     required TextContentModel textModel,
@@ -228,12 +239,10 @@ class ApiArContentRepository implements IArContentRepository {
     throw Exception('Failed to create text placement on server');
   }
 
-  @override
   Future<void> updateTransform(ArTransformModel updatedTransform) async {
     await _apiService.patch('/placements/${updatedTransform.arContentId}', data: updatedTransform.toJson());
   }
 
-  @override
   Future<void> updateContent(ArContentModel updatedItem) async {
     final payload = <String, dynamic>{};
     if (updatedItem.transform != null) {
@@ -247,12 +256,10 @@ class ApiArContentRepository implements IArContentRepository {
     await _apiService.patch('/placements/${updatedItem.id}', data: payload);
   }
 
-  @override
   Future<void> deleteContent(String contentId) async {
     await _apiService.delete('/placements/$contentId');
   }
 
-  @override
   Future<String?> uploadMediaFile({
     required List<int> bytes,
     required String fileName,

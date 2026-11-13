@@ -1,33 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlacementsController } from './placements.controller';
-import { ExperiencesService } from '../logic/experiences.service';
-import { PrismaService } from '../database/prisma.service';
+import { PlacementsService } from '../logic/placements.service';
+import { IPlacementsService } from '../core/contracts/placements-service.contract';
+import { IPlacementsRepository } from '../core/contracts/placements-repository.contract';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 describe('PlacementsController', () => {
   let controller: PlacementsController;
 
-  const mockExperiencesService = {
-    // Just mock whatever we need
-  };
-
-  const mockPrismaService = {
-    experience: {
-      findFirst: jest.fn(),
-    },
-    place: {
-      findFirst: jest.fn(),
-    }
+  const mockPlacementsRepository = {
+    findExperienceById: jest.fn(),
+    findPublishedExperienceByQrCode: jest.fn(),
+    getMiniAppData: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PlacementsController],
       providers: [
-        { provide: ExperiencesService, useValue: mockExperiencesService },
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: 'CACHE_MANAGER', useValue: { get: jest.fn(), set: jest.fn() } },
+        { provide: IPlacementsService, useClass: PlacementsService },
+        { provide: IPlacementsRepository, useValue: mockPlacementsRepository },
       ],
-    }).compile();
+    })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<PlacementsController>(PlacementsController);
   });
@@ -42,7 +39,7 @@ describe('PlacementsController', () => {
 
   describe('getPreview', () => {
     it('should map UI_PANEL to MINIAPP and parse mediaItems properly', async () => {
-      mockPrismaService.experience.findFirst.mockResolvedValue({
+      mockPlacementsRepository.findExperienceById.mockResolvedValue({
         id: 'test-exp-id',
         serviceInstances: [
           {
@@ -55,10 +52,10 @@ describe('PlacementsController', () => {
             },
             content: {
               mediaItems: [
-                { id: 'm1', type: 'image', url: 'http://test.com/image.jpg', x: 0, y: 0, width: 1, height: 1, rotation: 0 }
-              ]
-            }
-          }
+                { id: 'm1', type: 'image', url: 'http://test.com/image.jpg', x: 0, y: 0, width: 1, height: 1, rotation: 0 },
+              ],
+            },
+          },
         ],
         spatialNodes: [
           {
@@ -83,25 +80,22 @@ describe('PlacementsController', () => {
                 },
                 content: {
                   mediaItems: [
-                    { id: 'm1', type: 'image', url: 'http://test.com/image.jpg', x: 0, y: 0, width: 1, height: 1, rotation: 0 }
-                  ]
+                    { id: 'm1', type: 'image', url: 'http://test.com/image.jpg', x: 0, y: 0, width: 1, height: 1, rotation: 0 },
+                  ],
                 },
-                referenceId: 'service-1'
-              }
-            ]
-          }
-        ]
+                referenceId: 'service-1',
+              },
+            ],
+          },
+        ],
       });
 
-      const req = { query: { qrCode: 'LOC-test-exp-id' } };
-
-      const responsePayload = await controller.preview(req.query.qrCode as any);
+      const responsePayload = await controller.preview('LOC-test-exp-id');
 
       expect(responsePayload).toBeDefined();
-      
       expect(responsePayload.success).toBe(true);
       expect(responsePayload.data.objects).toHaveLength(1);
-      
+
       const obj = responsePayload.data.objects[0];
       expect(obj.contentType).toBe('MINIAPP');
       expect(obj.contentData.appId).toBe('NOTICE_BOARD');
@@ -114,27 +108,23 @@ describe('PlacementsController', () => {
     });
 
     it('should handle experiences without spatial nodes', async () => {
-      mockPrismaService.experience.findFirst.mockResolvedValue({
+      mockPlacementsRepository.findExperienceById.mockResolvedValue({
         id: 'test-exp-id',
         spatialNodes: [],
-        serviceInstances: []
+        serviceInstances: [],
       });
 
-      const req = { query: { qrCode: 'LOC-test-exp-id' } };
-
-      const responsePayload = await controller.preview(req.query.qrCode as any);
+      const responsePayload = await controller.preview('LOC-test-exp-id');
 
       expect(responsePayload.success).toBe(true);
       expect(responsePayload.data.objects).toHaveLength(0);
     });
 
     it('should return empty objects for invalid qr code', async () => {
-      mockPrismaService.experience.findFirst.mockResolvedValue(null);
-      mockPrismaService.place.findFirst.mockResolvedValue(null);
+      mockPlacementsRepository.findExperienceById.mockResolvedValue(null);
+      mockPlacementsRepository.findPublishedExperienceByQrCode.mockResolvedValue(null);
 
-      const req = { query: { qrCode: 'LOC-invalid' } };
-
-      const responsePayload = await controller.preview(req.query.qrCode as any);
+      const responsePayload = await controller.preview('LOC-invalid');
 
       expect(responsePayload).toEqual({ success: true, data: { objects: [] } });
     });

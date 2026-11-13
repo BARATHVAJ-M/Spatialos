@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,9 +50,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (mounted) {
       if (success) {
-        final userName = ref.read(authStateProvider).user?.name ?? 'Viewer';
-        ToastService.showWelcome(context, userName);
-        context.go('/home');
+        if (_isRegistering) {
+          context.go('/verification-pending?email=${Uri.encodeComponent(_emailController.text.trim())}');
+        } else {
+          final userName = ref.read(authStateProvider).user?.name ?? 'Viewer';
+          ToastService.showWelcome(context, userName);
+          context.go('/home');
+        }
       } else {
         final err = ref.read(authStateProvider).errorMessage ?? 'Authentication failed.';
         ToastService.showError(context, err);
@@ -229,12 +232,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 24),
 
                     PrimaryButton(
-                      text: _isRegistering ? 'Create Account' : 'Sign In',
-                      icon: _isRegistering ? Icons.person_add_alt_1 : Icons.login,
+                      text: _isRegistering ? 'Register' : 'Login',
                       isLoading: authState.isLoading,
                       onPressed: _handleSubmit,
                     ),
-                    const SizedBox(height: 18),
+                    if (!_isRegistering) ...[
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () => context.go('/forgot-password'),
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: AppColors.primary, fontSize: 14),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
 
                     TextButton(
                       onPressed: () => setState(() {
@@ -245,6 +257,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         _isRegistering ? 'Already have an account? Sign In' : 'New user? Create account',
                         style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Need help or found bugs?\nContact: spatialos.official@gmail.com',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white30, fontSize: 11),
                     ),
                   ],
                 ),

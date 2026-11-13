@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Param, Put, Req, Get, Delete, UseGuards, UseInterceptors } from '@nestjs/common';
 // Removed CacheInterceptor for admin CRUD reliability
-import { ExperiencesService } from '../logic/experiences.service';
+import { IExperiencesService } from '../core/contracts/experiences-service.contract';
 import { CreateExperienceDto, UpdateExperienceDto, UpdateSpatialNodesDto } from '../experiences/dto/experience.dto';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -9,7 +9,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller('v1/admin/experiences')
 export class ExperiencesController {
-  constructor(private readonly experiencesService: ExperiencesService) {}
+  constructor(private readonly experiencesService: IExperiencesService) {}
 
   @Get()
   findAll(@Req() req) {

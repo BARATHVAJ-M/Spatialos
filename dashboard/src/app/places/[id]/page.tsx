@@ -583,7 +583,7 @@ export default function PlaceDetailsPage() {
                     <td className="p-3.5 font-semibold text-slate-900 dark:text-white">
                       <div className="flex items-center gap-2.5">
                         <Box className="w-4 h-4 text-indigo-500 shrink-0" />
-                        <Link href={`/experiences/1`} className="hover:text-indigo-600 transition-colors">
+                        <Link href={`/experiences/${exp.id}`} className="hover:text-indigo-600 transition-colors">
                           {exp.name}
                         </Link>
                       </div>
@@ -625,7 +625,7 @@ export default function PlaceDetailsPage() {
                     <td className="p-3.5 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <Link 
-                          href="/experiences/1"
+                          href={`/experiences/${exp.id}`}
                           className="px-2.5 py-1 text-xs font-semibold text-indigo-400 bg-indigo-50 hover:bg-indigo-100 rounded transition-colors"
                         >
                           Open Scene Editor

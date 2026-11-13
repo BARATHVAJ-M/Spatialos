@@ -1,3 +1,16 @@
+// Compatibility shim: firebase_core's BuildConfigGenerator references JavaWriter from
+// an old AGP version. Adding javawriter to the buildscript classpath prevents the
+// NoClassDefFoundError: com/squareup/javawriter/JavaWriter at build time.
+buildscript {
+    repositories {
+        mavenCentral()
+        google()
+    }
+    dependencies {
+        classpath("com.squareup:javawriter:2.5.1")
+    }
+}
+
 allprojects {
     repositories {
         google()

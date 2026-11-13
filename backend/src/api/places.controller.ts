@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards } from '@nestjs/common';
-import { PlacesService } from '../logic/places.service';
+import { IPlacesService } from '../core/contracts/places-service.contract';
 import { CreatePlaceDto, UpdatePlaceDto } from '../places/dto/place.dto';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -8,7 +8,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller('v1/admin/places')
 export class PlacesController {
-  constructor(private readonly placesService: PlacesService) {}
+  constructor(private readonly placesService: IPlacesService) {}
 
   @Get()
   findAll(@Req() req) {

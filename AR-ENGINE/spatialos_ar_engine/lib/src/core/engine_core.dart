@@ -137,6 +137,10 @@ class EngineCore implements IEngineCore {
   Future<void> destroy() async {
     _updateState(EngineState.stopped);
     
+    if (moduleManager.isRegistered<ISceneManager>()) {
+      moduleManager.resolve<ISceneManager>().clearScene();
+    }
+    
     if (moduleManager.isRegistered<IEventBus>()) {
       (moduleManager.resolve<IEventBus>() as EventBus).dispose();
     }

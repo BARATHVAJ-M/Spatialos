@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'dart:io' show Platform;
 
-// Default to empty to force user to enter their current Wi-Fi IP address
-final String kDefaultServerUrl = '';
+// Set to true before building the APK for release
+const bool kIsProduction = false;
+const String kProductionServerUrl = 'https://spatialos-production.up.railway.app'; // Replace with actual hosted URL
+
+final String kDefaultServerUrl = kIsProduction ? kProductionServerUrl : 'http://192.168.1.5:3001';
 
 class ApiConfigState {
   final String serverUrl;

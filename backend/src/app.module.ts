@@ -21,8 +21,8 @@ import { SettingsModule } from './modules/settings.module';
 import { EmailModule } from './modules/email.module';
 import { JobsModule } from './modules/jobs.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
-import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
-import { RolesGuard } from './auth/guards/roles.guard';
+import { JwtAuthGuard } from './common/guards/auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 import { HealthController } from './api/health.controller';
 import { SeedService } from './logic/seed.service';
 

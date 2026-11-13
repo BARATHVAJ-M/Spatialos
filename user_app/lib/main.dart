@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/routes/app_router.dart';
+import 'core/services/telemetry_service.dart';
+import 'core/services/cache_service.dart';
+import 'dart:async';
 
 class LocalLanHttpOverrides extends HttpOverrides {
   @override
@@ -12,10 +15,17 @@ class LocalLanHttpOverrides extends HttpOverrides {
   }
 }
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = LocalLanHttpOverrides();
-  runApp(const ProviderScope(child: SpatialOsUserApp()));
+  
+  await TelemetryService.init();
+  await CacheService().init();
+
+  runZonedGuarded(
+    () => runApp(const ProviderScope(child: SpatialOsUserApp())),
+    (error, stack) => TelemetryService.recordError(error, stack, reason: 'runZonedGuarded Uncaught'),
+  );
 }
 
 class SpatialOsUserApp extends ConsumerWidget {

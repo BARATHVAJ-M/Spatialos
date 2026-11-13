@@ -1,4 +1,3 @@
-library spatialos_ar_engine;
 
 // ==========================================
 // SPATIALOS AR ENGINE - PUBLIC EXPORT BARREL
@@ -44,6 +43,7 @@ export 'src/spatial/contracts/i_localization_manager.dart';
 export 'src/spatial/models/spatial_pose.dart';
 export 'src/spatial/models/spatial_anchor.dart';
 export 'src/spatial/models/spatial_identity.dart';
+export 'src/spatial/physical_world_tracker.dart';
 
 // SCENE EXPORTS
 export 'src/scene/contracts/i_scene_manager.dart';
@@ -116,3 +116,4 @@ export 'src/core/bootstrap_pipeline.dart';
 
 // The Bootstrapper (The only concrete class we export for the host app)
 export 'src/core/engine_core.dart' show EngineCore;
+export 'src/core/spatialos_engine.dart' show SpatialOSEngine;

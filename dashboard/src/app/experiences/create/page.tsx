@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '../../../lib/api';
+import { experiencesService, placesService } from '../../../services';
 
 export default function CreateExperiencePage() {
   const router = useRouter();
@@ -23,9 +23,9 @@ export default function CreateExperiencePage() {
     const randomHex = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
     setQrId(`qr_exp_${randomHex.toLowerCase()}`);
     
-    // Fetch available places
-    apiFetch<any[]>('/places').then((data) => {
-      if (Array.isArray(data)) setAvailablePlaces(data);
+    // Fetch available places using domain service
+    placesService.getAll().then((result) => {
+      if (result.ok) setAvailablePlaces(result.value);
     }).catch(err => console.error('Failed to load places:', err));
   }, []);
 
@@ -39,26 +39,22 @@ export default function CreateExperiencePage() {
     if (!name.trim()) return alert("Experience name is required.");
     if (!type) return alert("Experience type is required.");
     if (!targetPlaceId) return alert("Target place is required.");
-    try {
-      await apiFetch<any>('/experiences', {
-        method: 'POST',
-        body: JSON.stringify({
-          qrId,
-          name,
-          type,
-          placeId: targetPlaceId,
-          description,
-          schedule: availability,
-          status
-        })
-      });
+    
+    const result = await experiencesService.create({
+      name,
+      placeId: targetPlaceId,
+      description,
+      schedule: availability,
+    });
 
+    if (result.ok) {
       router.push('/experiences');
-    } catch (err) {
-      console.error('Failed to create experience:', err);
-      alert('Failed to create experience.');
+    } else {
+      console.error('Failed to create experience:', result.error);
+      alert(result.error.message || 'Failed to create experience.');
     }
   };
+
 
   return (
     <div className="p-8 max-w-4xl mx-auto">

@@ -1,5 +1,4 @@
 import '../../spatial/models/spatial_anchor.dart';
-import '../../objects/models/transform_3d.dart';
 
 /// Represents a detected horizontal or vertical surface in the physical world.
 class PlaneAnchor extends SpatialAnchor {

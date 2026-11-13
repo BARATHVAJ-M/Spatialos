@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, MapPin, Sparkles, Navigation } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { apiFetch } from '../../../lib/api';
+import { placesService } from '../../../services';
 
 const LocationPicker = dynamic(() => import('../../../components/map/LocationPicker'), { ssr: false });
 
@@ -26,10 +26,10 @@ export default function CreatePlacePage() {
     const randomHex = Math.random().toString(16).substring(2, 7).toUpperCase();
     setSystemId(`PLC-${randomHex}`);
 
-    // Fetch available parents
-    apiFetch<any[]>('/places').then((data) => {
-      if (Array.isArray(data)) {
-        setAvailableParents(data);
+    // Fetch available parents via placesService
+    placesService.getAll().then((result) => {
+      if (result.ok) {
+        setAvailableParents(result.value);
       }
     }).catch(err => console.error('Failed to load places for parent dropdown:', err));
   }, []);
@@ -68,26 +68,22 @@ export default function CreatePlacePage() {
     if (e) e.preventDefault();
     if (!name.trim()) return alert("Place name is required.");
     if (!type) return alert("Place type is required.");
-    try {
-      const newPlace = await apiFetch<any>('/places', {
-        method: 'POST',
-        body: JSON.stringify({
-          name,
-          type,
-          parent: parent || undefined,
-          description,
-          status,
-          systemId,
-          latLong
-        })
-      });
+    
+    const result = await placesService.create({
+      name,
+      qrTargetId: systemId,
+      parentId: parent || undefined,
+      description,
+    });
 
+    if (result.ok) {
       router.push('/places');
-    } catch (err) {
-      console.error('Failed to create place:', err);
-      alert('Failed to create place.');
+    } else {
+      console.error('Failed to create place:', result.error);
+      alert(result.error.message || 'Failed to create place.');
     }
   };
+
 
   return (
     <div className="p-8 max-w-4xl mx-auto">

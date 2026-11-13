@@ -1,5 +1,4 @@
 import 'i_mini_app_api.dart';
-import '../models/mini_app_manifest.dart';
 import '../../objects/models/i_spatial_node_data.dart';
 
 enum MiniAppState {

@@ -1,4 +1,3 @@
-rkdown
 # SpatialOS Implementation Specification: Developer Onboarding & Local Setup
 
 **Document ID:** 10_Developer_Onboarding_&_Local_Setup  
@@ -11,54 +10,56 @@ rkdown
 
 Before pulling the codebase, ensure your local development machine has the following installed:
 * **Node.js** (v20 LTS or higher)
-* **Docker Desktop** (For spinning up local PostgreSQL & Redis)
+* **PostgreSQL** (Native installer, pgAdmin, or lightweight cloud DB like Neon / Supabase)
 * **Git**
 * **Mobile Device:** iOS (ARKit compatible) or Android (ARCore compatible) for physical testing.
-* **Ngrok:** (Required to expose your `localhost` to your mobile phone over cellular/Wi-Fi).
+* **Ngrok:** (Required to expose your `localhost` to your mobile phone over Wi-Fi/cellular).
 
 ---
 
 ## 2. Repository Initialization
 
-Clone the monorepo and install the dependencies. We use Turborepo to manage the packages.
+Clone the monorepo and install the dependencies:
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/your-org/spatialos-monorepo.git](https://github.com/your-org/spatialos-monorepo.git)
+git clone https://github.com/your-org/spatialos-monorepo.git
 cd spatialos-monorepo
 
-# 2. Install all dependencies across all workspaces
+# 2. Install all dependencies
 npm install
-3. Environment Configuration
+```
+
+## 3. Environment Configuration
 You must define the local environment variables for the Backend and the Admin Dashboard.
 
-Create a .env file in the root of apps/backend-api/:
+Create a `.env` file in the root of `backend/`:
 
-Code snippet
+```env
 # --- SPATIALOS LOCAL ENVIRONMENT ---
 
 # 1. Database Connections
-DATABASE_URL="postgresql://postgres:spatialos_dev@localhost:5432/spatialos?schema=public"
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/spatialos?schema=public"
 
 # 2. Security & Auth
 JWT_SECRET="local_dev_jwt_secret_998877"
 SPATIALOS_QR_SECRET="local_qr_signing_secret"
 
 # 3. Server Config
-PORT=4000
+PORT=3001
 NODE_ENV="development"
-4. Bootstrapping the Local Database
-Instead of installing PostgreSQL on your Mac/Windows machine manually, use the provided Docker Compose file to spin up an isolated database container.
+```
 
-Bash
-# 1. Start PostgreSQL & Redis locally
-docker-compose -f docker-compose.dev.yml up -d
+## 4. Bootstrapping the Local Database
+Ensure your PostgreSQL instance is running locally or configured via cloud, then push the schema:
 
-# 2. Push the Prisma Schema to the empty database (From Doc 02)
-npx prisma db push --schema=packages/database/prisma/schema.prisma
+```bash
+# 1. Push the Prisma Schema to the database
+npx prisma db push
 
-# 3. Generate the Prisma Client types
+# 2. Generate the Prisma Client types
 npx prisma generate
+```
 The Database Seeder
 To test the AR app, you need data. Run the Prisma seeder to automatically create a test Organization, an Admin User, a Place (QR_DEV_01), and a basic Experience.
 

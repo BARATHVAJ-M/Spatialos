@@ -1,70 +1,49 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
+import { Injectable } from '@nestjs/common';
+import { IPlacesService } from '../core/contracts/places-service.contract';
+import { IPlacesRepository } from '../core/contracts/places-repository.contract';
+import { AppError } from '../core/errors/app-error';
 
 @Injectable()
-export class PlacesService {
-  constructor(private prisma: PrismaService) {}
+export class PlacesService implements IPlacesService {
+  constructor(private readonly repo: IPlacesRepository) {}
 
   async findAll(organizationId: string) {
-    return this.prisma.place.findMany({
-      where: { organizationId },
-      include: {
-        _count: {
-          select: { experiences: { where: { status: 'PUBLISHED' } } }
-        }
-      }
-    });
+    return this.repo.findAll(organizationId);
   }
 
   async findOne(organizationId: string, id: string) {
-    const place = await this.prisma.place.findFirst({
-      where: { id, organizationId },
-      include: {
-        experiences: {
-          orderBy: { version: 'desc' }
-        },
-        children: true
-      }
-    });
-    if (!place) throw new NotFoundException('Place not found');
+    const place = await this.repo.findById(organizationId, id);
+    if (!place) {
+      throw AppError.domain('PLACE_NOT_FOUND', 'Place not found', 'places.service.ts');
+    }
     return place;
   }
 
   async create(organizationId: string, name: string, parentId?: string) {
-    // Generate a secure qrTargetId
+    if (parentId) {
+      const parent = await this.repo.findById(organizationId, parentId);
+      if (!parent) {
+        throw AppError.domain('PARENT_PLACE_NOT_FOUND', 'Parent place not found', 'places.service.ts');
+      }
+    }
     const qrTargetId = `spatialos://resolve?id=${Math.random().toString(36).substring(7)}`;
-    return this.prisma.place.create({
-      data: {
-        organizationId,
-        name,
-        parentId,
-        qrTargetId,
-      },
-    });
+    return this.repo.create({ organizationId, name, parentId, qrTargetId });
   }
 
   async update(organizationId: string, id: string, name: string) {
-    const place = await this.prisma.place.findFirst({
-      where: { id, organizationId }
-    });
-    if (!place) throw new NotFoundException('Place not found');
-
-    return this.prisma.place.update({
-      where: { id },
-      data: { name },
-    });
+    const place = await this.repo.findById(organizationId, id);
+    if (!place) {
+      throw AppError.domain('PLACE_NOT_FOUND', 'Place not found', 'places.service.ts');
+    }
+    return this.repo.update(id, { name });
   }
 
   async remove(organizationId: string, id: string) {
-    const place = await this.prisma.place.findFirst({
-      where: { id, organizationId }
-    });
-    if (!place) throw new NotFoundException('Place not found');
-
-    // In a real app we might soft delete, but for now hard delete or let Prisma Cascade
-    return this.prisma.place.delete({
-      where: { id },
-    });
+    const place = await this.repo.findById(organizationId, id);
+    if (!place) {
+      throw AppError.domain('PLACE_NOT_FOUND', 'Place not found', 'places.service.ts');
+    }
+    await this.repo.delete(id);
+    return { success: true };
   }
 }
-

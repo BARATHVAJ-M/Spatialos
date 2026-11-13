@@ -31,7 +31,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 h-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-700 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-200 dark:border-slate-800 shadow-xl flex-shrink-0 z-20 transition-colors">
+    <aside className="w-64 h-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex flex-col border-r border-slate-200 dark:border-slate-800 shadow-xl flex-shrink-0 z-20 transition-colors">
       {/* Brand Header */}
       <div className="h-16 px-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 shrink-0 select-none">
         {/* CSS-rendered SpatialOS Logo (cyan to blue gradient) */}
@@ -52,8 +52,8 @@ export function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150 ${
                 isActive 
-                  ? 'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 font-medium' 
-                  : 'hover:bg-slate-200 dark:hover:bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white'
+                  ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium' 
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <Icon className="w-5 h-5 shrink-0" />
@@ -64,14 +64,14 @@ export function Sidebar() {
       </nav>
 
       {/* Settings (Pinned to bottom) */}
-      <div className="p-3 border-t border-slate-200 dark:border-slate-800 dark:border-slate-200 dark:border-slate-800 shrink-0 space-y-1">
+      <div className="p-3 border-t border-slate-200 dark:border-slate-800 shrink-0 space-y-1">
         <ThemeToggle />
         <Link 
           href="/settings"
           className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150 ${
             pathname.startsWith('/settings') 
-              ? 'bg-indigo-500/10 text-indigo-400 font-medium' 
-              : 'hover:bg-white dark:bg-slate-800 hover:text-slate-900 dark:text-white'
+              ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium' 
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <Settings className="w-5 h-5 shrink-0" />

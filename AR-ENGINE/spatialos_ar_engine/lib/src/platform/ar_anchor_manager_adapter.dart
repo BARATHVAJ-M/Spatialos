@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:ar_flutter_plugin_flutterflow/managers/ar_anchor_manager.dart';
-import 'package:ar_flutter_plugin_flutterflow/models/ar_anchor.dart';
+import 'package:ar_flutter_plugin/managers/ar_anchor_manager.dart';
+import 'package:ar_flutter_plugin/models/ar_anchor.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math;
 import '../spatial/contracts/i_anchor_contract.dart';
 import '../spatial/models/spatial_anchor.dart';

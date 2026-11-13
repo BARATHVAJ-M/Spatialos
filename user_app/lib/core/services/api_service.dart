@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/api_config.dart';
+import 'telemetry_service.dart';
 
 /// Riverpod provider exposing centralized ApiService reactive to ApiConfig network changes
 final apiServiceProvider = Provider<ApiService>((ref) {
@@ -81,6 +82,11 @@ class ApiService {
           error: formattedMessage,
           message: formattedMessage,
         );
+        
+        if (e.response?.statusCode == 500 || e.type == DioExceptionType.connectionTimeout) {
+          TelemetryService.logNetworkError(e.requestOptions.path, e.response?.statusCode, e.response?.data);
+        }
+
         return handler.next(newError);
       },
     ));

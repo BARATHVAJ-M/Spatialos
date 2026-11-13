@@ -1,20 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExperiencesService } from './experiences.service';
-import { PrismaService } from '../database/prisma.service';
+import { IExperiencesRepository } from '../core/contracts/experiences-repository.contract';
 import { ContentService } from './content.service';
 
 describe('ExperiencesService', () => {
   let service: ExperiencesService;
 
-  const mockPrismaService = {
-    experience: {
-      findMany: jest.fn(),
-      findFirst: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
+  const mockExperiencesRepository = {
+    findAll: jest.fn(),
+    findById: jest.fn(),
+    findByIdBasic: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    publish: jest.fn(),
+    rollback: jest.fn(),
+    replaceSpatialNodes: jest.fn(),
+    replaceServiceInstances: jest.fn(),
+    delete: jest.fn(),
   };
 
   const mockContentService = {
@@ -25,7 +27,7 @@ describe('ExperiencesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ExperiencesService,
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: IExperiencesRepository, useValue: mockExperiencesRepository },
         { provide: ContentService, useValue: mockContentService },
       ],
     }).compile();
@@ -42,37 +44,30 @@ describe('ExperiencesService', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of experiences', async () => {
+    it('should return an array of experiences from repository', async () => {
       const mockResult = [{ id: '1', name: 'Exp 1' }];
-      mockPrismaService.experience.findMany.mockResolvedValue(mockResult);
+      mockExperiencesRepository.findAll.mockResolvedValue(mockResult);
 
       const result = await service.findAll('org-1');
       expect(result).toEqual(mockResult);
-      expect(mockPrismaService.experience.findMany).toHaveBeenCalledTimes(1);
+      expect(mockExperiencesRepository.findAll).toHaveBeenCalledWith('org-1');
     });
   });
 
   describe('findOne', () => {
-    it('should return an experience by id', async () => {
+    it('should return an experience by id from repository', async () => {
       const mockResult = { id: '1', name: 'Exp 1' };
-      mockPrismaService.experience.findFirst.mockResolvedValue(mockResult);
+      mockExperiencesRepository.findById.mockResolvedValue(mockResult);
 
       const result = await service.findOne('org-1', '1');
       expect(result).toEqual(mockResult);
-      expect(mockPrismaService.experience.findFirst).toHaveBeenCalledWith({
-        where: { id: '1', organizationId: 'org-1' },
-        include: {
-          place: { select: { id: true, name: true } },
-          spatialNodes: true,
-          serviceInstances: {
-            include: {
-              serviceDefinition: {
-                select: { name: true, version: true, configurationSchema: true }
-              }
-            }
-          }
-        }
-      });
+      expect(mockExperiencesRepository.findById).toHaveBeenCalledWith('org-1', '1');
+    });
+
+    it('should throw AppError when experience not found', async () => {
+      mockExperiencesRepository.findById.mockResolvedValue(null);
+
+      await expect(service.findOne('org-1', '999')).rejects.toThrow();
     });
   });
 });

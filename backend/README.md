@@ -15,7 +15,7 @@ The **Backend** is the central nervous system of SpatialOS. It provides the core
 
 ### 1. Prerequisites
 - **Node.js** (v18+ or v20+)
-- **PostgreSQL** running locally on port 5432 (e.g., via pgAdmin, Docker, or native installer)
+- **PostgreSQL** running on port 5432 (e.g., via pgAdmin, native installer, or cloud DB like Neon/Supabase)
 
 ### 2. Configure Environment
 Copy the example environment file:

@@ -1,7 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { CompilerService } from '../logic/compiler.service';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Roles('USER', 'ADMIN')

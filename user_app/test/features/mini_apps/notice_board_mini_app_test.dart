@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:user_app/features/mini_apps/notice_board_mini_app.dart';
-import 'package:user_app/core/config/api_config.dart';
 import 'package:user_app/shared/models/mini_app_content_model.dart';
+import 'package:user_app/shared/models/ar_content_model.dart';
 
 void main() {
   group('NoticeBoardMiniApp', () {
@@ -34,6 +34,18 @@ void main() {
         },
       );
 
+      final now = DateTime.now();
+      final item = ArContentModel(
+        id: 'content_1',
+        qrLocationId: 'LOC-123',
+        contentType: ArContentType.miniapp,
+        contentReferenceId: 'ref_1',
+        createdBy: 'admin',
+        createdAt: now,
+        updatedAt: now,
+        miniAppContent: mockModel,
+      );
+
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -42,7 +54,7 @@ void main() {
                 child: SizedBox(
                   width: 300,
                   height: 400,
-                  child: NoticeBoardMiniApp(state: mockModel.state),
+                  child: NoticeBoardMiniApp(item: item),
                 ),
               ),
             ),
@@ -76,11 +88,27 @@ void main() {
         ]
       };
 
+      final now = DateTime.now();
+      final item = ArContentModel(
+        id: 'content_2',
+        qrLocationId: 'LOC-123',
+        contentType: ArContentType.miniapp,
+        contentReferenceId: 'ref_2',
+        createdBy: 'admin',
+        createdAt: now,
+        updatedAt: now,
+        miniAppContent: MiniAppContentModel(
+          id: '2',
+          appId: 'NOTICE_BOARD',
+          state: state,
+        ),
+      );
+
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: NoticeBoardMiniApp(state: state),
+              body: NoticeBoardMiniApp(item: item),
             ),
           ),
         ),

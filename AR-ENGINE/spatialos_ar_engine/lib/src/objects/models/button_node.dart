@@ -1,5 +1,4 @@
 import 'spatial_node.dart';
-import 'transform_3d.dart';
 
 class ButtonNode extends SpatialNode {
   final String label;

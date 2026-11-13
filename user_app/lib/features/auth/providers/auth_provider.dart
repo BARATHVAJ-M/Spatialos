@@ -58,11 +58,47 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> register(String name, String email, String password) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final user = await _repository.register(name, email, password);
-      state = AuthState(user: user, isLoading: false);
+      await _repository.register(name, email, password);
+      state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      state = AuthState(user: null, isLoading: false, errorMessage: ApiService.formatNetworkError(e));
+      state = state.copyWith(isLoading: false, errorMessage: ApiService.formatNetworkError(e));
+      return false;
+    }
+  }
+
+  Future<bool> verifyEmail(String email, String otp) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _repository.verifyEmail(email, otp);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: ApiService.formatNetworkError(e));
+      return false;
+    }
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _repository.forgotPassword(email);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: ApiService.formatNetworkError(e));
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword(String email, String otp, String newPassword) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _repository.resetPassword(email, otp, newPassword);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: ApiService.formatNetworkError(e));
       return false;
     }
   }

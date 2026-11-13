@@ -32,6 +32,7 @@ abstract class SpatialNode implements ISpatialNodeData {
   @override
   String get type => nodeType.toString().split('.').last;
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'id': id,

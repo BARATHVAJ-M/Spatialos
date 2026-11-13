@@ -111,3 +111,61 @@ export interface AuditItem {
   diff?: { before: unknown; after: unknown };
   type: 'publish' | 'config' | 'node' | 'system' | string;
 }
+
+export interface CreateExperienceDto {
+  name: string;
+  placeId?: string;
+  description?: string;
+  schedule?: string;
+}
+
+export interface UpdateExperienceDto {
+  name?: string;
+  placeId?: string;
+  description?: string;
+  schedule?: string;
+  status?: string;
+}
+
+export interface CreatePlaceDto {
+  name: string;
+  qrTargetId: string;
+  parentId?: string;
+  description?: string;
+  tags?: string[];
+  status?: 'Active' | 'Draft' | 'Archived';
+}
+
+export interface UpdatePlaceDto {
+  name?: string;
+  qrTargetId?: string;
+  parentId?: string;
+  description?: string;
+  tags?: string[];
+  status?: 'Active' | 'Draft' | 'Archived';
+}
+
+export interface ContentAsset {
+  id: string;
+  name: string;
+  url: string;
+  mimeType?: string;
+  size?: number | string;
+  createdAt?: string;
+}
+
+export interface LoginDto {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+    name?: string;
+  };
+}
+

@@ -9,6 +9,8 @@ import * as os from 'os';
 import { STORAGE_ADAPTER } from '../logic/storage/storage.interface';
 import { LocalDiskStorageAdapter } from '../logic/storage/local-disk.adapter';
 
+import { IContentService } from '../core/contracts/content-service.contract';
+
 @Module({
   imports: [
     MulterModule.register({
@@ -43,15 +45,14 @@ import { LocalDiskStorageAdapter } from '../logic/storage/local-disk.adapter';
   controllers: [ContentController, MediaController],
   providers: [
     ContentService,
+    { provide: IContentService, useClass: ContentService },
     {
       provide: STORAGE_ADAPTER,
       useFactory: () => {
-        // In the future, you can check process.env.STORAGE_PROVIDER here
-        // e.g. return process.env.STORAGE_PROVIDER === 's3' ? new S3StorageAdapter() : new LocalDiskStorageAdapter();
         return new LocalDiskStorageAdapter();
       },
     }
   ],
-  exports: [ContentService, STORAGE_ADAPTER],
+  exports: [ContentService, IContentService, STORAGE_ADAPTER],
 })
 export class ContentModule {}
