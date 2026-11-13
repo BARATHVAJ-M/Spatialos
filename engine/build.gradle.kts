@@ -5,11 +5,10 @@ plugins {
 
 android {
     namespace = "com.spatialos.engine"
-    compileSdk = 36
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 24
-        targetSdk = 36
     }
 
     compileOptions {
@@ -34,8 +33,8 @@ dependencies {
     implementation("com.google.mediapipe:tasks-vision:0.10.14")
 
     // Flutter embedding — ONLY in bridge/ module
-    // Provided by the host Flutter project; do not add as api()
-    compileOnly("io.flutter:flutter_embedding_debug:1.0.0-latest")
+    // Provided by host Flutter app at runtime when embedded
+    // compileOnly("io.flutter:flutter_embedding_debug:...")
 
     // Kotlin coroutines for async pipeline coordination
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
