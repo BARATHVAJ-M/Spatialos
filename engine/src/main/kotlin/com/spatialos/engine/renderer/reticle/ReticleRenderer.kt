@@ -1,3 +1,4 @@
 ﻿package com.spatialos.engine.renderer.reticle
 
-// Filament mesh at hit-test Pose, animates opacity — TODO: Implement
+// Filament disk mesh positioned at hit-test Pose on detected plane
+// TODO: Implement

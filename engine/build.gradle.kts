@@ -40,3 +40,4 @@ dependencies {
     // Kotlin coroutines for async pipeline coordination
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
+
